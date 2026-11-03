@@ -71,9 +71,26 @@
   .auth-input { width:240px; padding:10px 12px; font-size:16px; color:#e2e8f0; background:rgba(15,23,42,.7);
     border:1px solid rgba(148,163,184,.35); border-radius:10px; outline:none; }
   .auth-input:focus { border-color:#818cf8; }
+  .col-card .col-av { width:52px; height:52px; margin:0 auto 2px; border-radius:10px; background:rgba(2,6,23,.4); }
+  .catch-av { width:120px; height:120px; margin:0 auto 6px; }
+  .catch-avhint { font-size:12px; color:#fbbf24; margin:2px 0 8px; }
+  #catch-anim .ca-panel { display:flex; flex-direction:column; align-items:center; gap:12px; padding:26px 34px; }
+  .ca-stage { position:relative; width:200px; height:200px; }
+  .ca-pkm { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); transition:all .5s ease; }
+  .ca-pkm.in { transform:translate(-50%,-50%) scale(.15); opacity:.15; }
+  .ca-ball { position:absolute; left:150px; top:150px; width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(180deg,#ef4444 0 50%,#f8fafc 50% 100%); border:3px solid #0f172a;
+    box-shadow:inset 0 0 0 2px #f8fafc, 0 0 16px rgba(239,68,68,.65); }
+  .ca-ball.fly { animation:caFly .9s ease-in forwards; }
+  .ca-ball.shake { animation:caShake .5s linear 3; }
+  @keyframes caFly { to { transform:translate(-48px,-58px); } }
+  @keyframes caShake { 0%,100%{transform:translate(-48px,-58px) rotate(0)} 25%{transform:translate(-52px,-54px) rotate(-20deg)} 75%{transform:translate(-44px,-62px) rotate(20deg)} }
   #shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;
     max-height:56vh; overflow-y:auto; padding:4px; margin-top:12px; }
   .shop-tabs { display:flex; gap:8px; justify-content:center; margin-top:10px; }
+  .attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; max-height:52vh; overflow-y:auto; padding:6px; margin:12px 0; }
+  .attr-it { display:flex; align-items:center; gap:6px; font-size:13px; color:#e2e8f0; background:rgba(15,23,42,.65); border:1px solid rgba(148,163,184,.25); border-radius:8px; padding:7px 9px; cursor:pointer; }
+  .attr-desc { color:#94a3b8; font-size:11px; margin-left:auto; text-align:right; }
   #menu .menu-btns .btn { margin-top:0; }
   .btn {
     margin-top:26px; min-width:190px; min-height:52px; padding:0 28px; border:none; border-radius:12px;
@@ -342,6 +359,19 @@
     </div>
   </div>
 
+  <!-- ===== 属性专属技能选择（切换角色重新选择）===== -->
+  <div class="overlay" id="attrpick" hidden>
+    <div class="panel attr-panel">
+      <h2 class="col-title" id="attr-title">选择专属技能</h2>
+      <p class="col-sub" id="attr-sub">每属性 15 个专属技能 · 品质 白 / 蓝 / 金 / 红 · 切换角色时按属性重选，等级继承</p>
+      <div class="attr-grid" id="attr-grid"></div>
+      <div class="p-row">
+        <button class="btn" id="attr-ok">确认装备</button>
+        <button class="btn ghost" id="attr-back">返回</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 商店：Z 招式 / Mega 石 / 极巨化 ===== -->
   <div class="overlay" id="shop" hidden>
     <div class="col-title">商店</div>
@@ -373,14 +403,26 @@
   <div class="overlay" id="catch" hidden>
     <div class="panel catch-panel">
       <h2 class="catch-title">捕捉机会</h2>
-      <div class="catch-avatar" id="catch-avatar">?</div>
+      <canvas class="catch-av" id="catch-av" width="120" height="120"></canvas>
       <p class="catch-name" id="catch-name">—</p>
-      <div class="catch-balls">
-        <button class="ball" id="ball-1" title="掷出精灵球" aria-label="第1次捕捉"></button>
-        <button class="ball" id="ball-2" title="掷出精灵球" aria-label="第2次捕捉"></button>
-        <button class="ball" id="ball-3" title="掷出精灵球" aria-label="第3次捕捉"></button>
+      <p class="catch-avhint" id="catch-avhint">—</p>
+      <div class="p-row">
+        <button class="btn" id="btn-catch">捕捉（掷出精灵球）</button>
+        <button class="btn ghost" id="btn-catch-run">放弃</button>
       </div>
       <p class="catch-hint" id="catch-hint">共 3 次机会 · 每次成功概率随机（不超过 30%）</p>
+    </div>
+  </div>
+
+  <!-- ===== 经典捕捉动画：扔精灵球 → 摇晃 ===== -->
+  <div class="overlay" id="catch-anim" hidden>
+    <div class="panel ca-panel">
+      <h2 class="catch-title">GO!</h2>
+      <div class="ca-stage">
+        <canvas class="ca-pkm" id="ca-pkm" width="120" height="120"></canvas>
+        <div class="ca-ball" id="ca-ball"></div>
+      </div>
+      <p class="catch-hint" id="ca-hint">精灵球飞出了…</p>
     </div>
   </div>
 
@@ -1511,28 +1553,47 @@ for(const a of ATTR_KEYS){ POKEDEX_BY_ATTR[a]=POKEDEX_KEYS.filter(id=>POKEDEX[id
 const ROLE_EVOLVE_COST = [0, 60, 120];                     // 进化 1→2 需 60 金币，2→3 需 120 金币
 // 二级神（每 5 关大 Boss · 随机）
 const GODS_2 = [
-  { name:"急冻鸟",   attr:"ice" },  { name:"闪电鸟",   attr:"elec" },
-  { name:"火焰鸟",   attr:"fire" }, { name:"水君",     attr:"water" },
-  { name:"时拉比",   attr:"grass" },{ name:"雷吉洛克", attr:"rock" },
-  { name:"基拉祈",   attr:"steel" },{ name:"拉帝欧斯", attr:"dragon" },
-  { name:"克雷色利亚",attr:"psychic"},{ name:"达克莱伊", attr:"dark" },
-  { name:"龙卷云",   attr:"flying" },{ name:"土地云",   attr:"ground" },
-  { name:"勾帕路翁", attr:"fight" },{ name:"玛夏多",   attr:"ghost" },
-  { name:"虚吾伊德", attr:"poison" },{ name:"费洛美螂", attr:"bug" },
-  { name:"卡璞·蝶蝶",attr:"fairy" },{ name:"雷吉奇卡斯",attr:"normal" },
+  { name:"急冻鸟",   attr:"ice",    id:"articuno" }, { name:"闪电鸟",   attr:"elec",  id:"zapdos" },
+  { name:"火焰鸟",   attr:"fire",   id:"moltres" },  { name:"水君",     attr:"water", id:"suicune" },
+  { name:"时拉比",   attr:"grass",  id:"celebi" },   { name:"雷吉洛克", attr:"rock",  id:"regirock" },
+  { name:"基拉祈",   attr:"steel",  id:"jirachi" },  { name:"拉帝欧斯", attr:"dragon",id:"latios" },
+  { name:"克雷色利亚",attr:"psychic",id:"cresselia"},{ name:"达克莱伊", attr:"dark",  id:"darkrai" },
+  { name:"龙卷云",   attr:"flying", id:"tornadus" }, { name:"土地云",   attr:"ground",id:"landorus" },
+  { name:"勾帕路翁", attr:"fight",  id:"cobalion" }, { name:"玛夏多",   attr:"ghost", id:"marshadow" },
+  { name:"虚吾伊德", attr:"poison", id:"nihilego" }, { name:"费洛美螂", attr:"bug",   id:"pheromosa" },
+  { name:"卡璞·蝶蝶",attr:"fairy",  id:"tapu-lele" },{ name:"雷吉奇卡斯",attr:"normal",id:"regigigas" },
 ];
 // 一级神（每 10 关终极 Boss · 随机，原著属性）
 const GODS_1 = [
-  { name:"超梦",   attr:"psychic" },{ name:"凤王",     attr:"fire" },
-  { name:"洛奇亚", attr:"flying" }, { name:"固拉多",   attr:"ground" },
-  { name:"盖欧卡", attr:"water" },  { name:"烈空坐",   attr:"dragon" },
-  { name:"帝牙卢卡",attr:"steel" }, { name:"帕路奇犽", attr:"dragon" },
-  { name:"骑拉帝纳",attr:"ghost" }, { name:"阿尔宙斯", attr:"normal" },
-  { name:"捷克罗姆",attr:"elec" },  { name:"雷希拉姆", attr:"fire" },
-  { name:"酋雷姆", attr:"ice" },    { name:"哲尔尼亚斯",attr:"fairy" },
-  { name:"伊裴尔塔尔",attr:"dark" },{ name:"基格尔德", attr:"ground" },
-  { name:"奈克洛兹玛",attr:"psychic"},{ name:"无极汰那", attr:"poison" },
+  { name:"超梦",   attr:"psychic", id:"mewtwo" },   { name:"凤王",     attr:"fire",    id:"ho-oh" },
+  { name:"洛奇亚", attr:"flying",  id:"lugia" },    { name:"固拉多",   attr:"ground",  id:"groudon" },
+  { name:"盖欧卡", attr:"water",   id:"kyogre" },   { name:"烈空坐",   attr:"dragon",  id:"rayquaza" },
+  { name:"帝牙卢卡",attr:"steel",  id:"dialga" },   { name:"帕路奇犽", attr:"dragon",  id:"palkia" },
+  { name:"骑拉帝纳",attr:"ghost",  id:"giratina" }, { name:"阿尔宙斯", attr:"normal",  id:"arceus" },
+  { name:"捷克罗姆",attr:"elec",   id:"zekrom" },   { name:"雷希拉姆", attr:"fire",    id:"reshiram" },
+  { name:"酋雷姆", attr:"ice",     id:"kyurem" },   { name:"哲尔尼亚斯",attr:"fairy", id:"xerneas" },
+  { name:"伊裴尔塔尔",attr:"dark", id:"yveltal" },  { name:"基格尔德", attr:"ground",  id:"zygarde" },
+  { name:"奈克洛兹玛",attr:"psychic",id:"necrozma" },{ name:"无极汰那",attr:"poison", id:"eternatus" },
 ];
+// 角色品质档：一级神（1 红 1 金）> 二级神（1 金 1 蓝）> 幻兽（1 金）> 普通（1 蓝）
+const TIER_1={"mewtwo":1,"ho-oh":1,"lugia":1,"groudon":1,"kyogre":1,"rayquaza":1,"dialga":1,"palkia":1,"giratina":1,"arceus":1,"zekrom":1,"reshiram":1,"kyurem":1,"xerneas":1,"yveltal":1,"zygarde":1,"necrozma":1,"eternatus":1};
+const TIER_2={"articuno":1,"zapdos":1,"moltres":1,"raikou":1,"entei":1,"suicune":1,"regirock":1,"regice":1,"registeel":1,"latias":1,"latios":1,"cresselia":1,"heatran":1,"cobalion":1,"terrakion":1,"virizion":1,"tornadus":1,"thundurus":1,"landorus":1,"regigigas":1,"tapu-koko":1,"tapu-lele":1,"tapu-bulu":1,"tapu-fini":1,"nihilego":1,"buzzwole":1,"pheromosa":1,"xurkitree":1,"celesteela":1,"kartana":1,"guzzlord":1};
+const MYTH={"mew":1,"celebi":1,"jirachi":1,"deoxys":1,"manaphy":1,"darkrai":1,"victini":1,"meloetta":1,"genesect":1,"diancie":1,"hoopa":1,"volcanion":1,"magearna":1,"marshadow":1,"zeraora":1,"meltan":1,"melmetal":1,"shaymin":1};
+function roleTier(id){ return TIER_1[id]?3:TIER_2[id]?2:MYTH[id]?1:0; }
+function ensureTierSkills(id){       // 神兽/幻兽/普通精灵自带品质技能（入场装备）
+  const tier=roleTier(id);
+  const attr=PK(id).attr;
+  const pool=ATTR_SKILLS.filter(s=>s.attr===attr);
+  const want = tier===3?["red","gold"] : tier===2?["gold","blue"] : tier===1?["gold"] : ["blue"];
+  for(const w of want){
+    const cand=pool.filter(s=>s.quality===w);
+    if(cand.length){
+      const pick=cand[Math.floor(Math.random()*cand.length)];
+      S.tierIds[pick.id]=true;
+      if(!S.skills[pick.id]) S.skills[pick.id]=1;
+    }
+  }
+}
 
 /* ===== Mega 石 / 极巨化 / Z 招式（金币购买 · 原著契合） ===== */
 const MEGA_COST=15000, DYNA_COST=30000, Z_COST=40000;
@@ -1611,6 +1672,7 @@ const S = {
   stats:{ kills:0 },
   best: null,
   zOwned:{}, bossAoEs:[], shieldSurgeT:0,   // Z 招式拥有集 · Boss 范围技 · 临时护盾
+  attrPick:{}, attrLv:{}, pendingRole:null, tierIds:{},   // 属性专属技能选择 · 属性技能等级继承 · 待设主战 · 神兽自带品质技能
   mute:false,
   audio:null,             // 桌面端 Web Audio
   joy:{ active:false, baseX:0, baseY:0, dx:0, dy:0 },
@@ -1672,6 +1734,8 @@ function loadProgress(){
   S.dynaUnlocked = !!d.dyna;
   S.zUnlocked = !!d.z;
   if(d.zOwned && typeof d.zOwned==="object") S.zOwned=d.zOwned;
+  if(d.attrPick && typeof d.attrPick==="object") S.attrPick=d.attrPick;
+  if(d.attrLv && typeof d.attrLv==="object") S.attrLv=d.attrLv;
   if(d.best) S.best=d.best;
   S.mute = !!d.mute;
   if(S.zUnlocked && !Object.keys(S.zOwned).length){ S.zOwned[PK(S.activeRole).attr]=true; }  // 老手环：默认本命属性
@@ -1680,7 +1744,7 @@ loadProgress();
 function saveProgress(){
   try{
     const data={ roster:S.roster, coins:S.coins, shiny:S.shiny, slots:S.partySlots, party:S.party,
-      mega:S.mega, dyna:S.dynaUnlocked, z:S.zUnlocked, zOwned:S.zOwned, best:S.best, mute:S.mute };
+      mega:S.mega, dyna:S.dynaUnlocked, z:S.zUnlocked, zOwned:S.zOwned, best:S.best, mute:S.mute, attrPick:S.attrPick, attrLv:S.attrLv };
     localStorage.setItem("pokerush_save_"+currentUser(), JSON.stringify(data));
   }catch(e){}
 }
@@ -1780,10 +1844,10 @@ function spawnBoss(){
   S.bossActive = true;
   S.enemies.length = 0;                                              // 清场，专注 Boss
   // 每 10 关终极 Boss（一级神）· 每 5 关大 Boss（二级神）· 其余普通 Boss（全部随机）
-  let ult=false, mega=false, name="", bid;
-  if(S.stage % CONFIG.level.ultEvery === 0){ ult=true; const g=GODS_1[Math.floor(Math.random()*GODS_1.length)]; bid=g.attr; name=g.name; }
-  else if(S.stage % CONFIG.level.megaEvery === 0){ mega=true; const g=GODS_2[Math.floor(Math.random()*GODS_2.length)]; bid=g.attr; name=g.name; }
-  else { const gi=POKEDEX_KEYS[Math.floor(Math.random()*POKEDEX_KEYS.length)]; bid=PK(gi).attr; name=PK(gi).name; }
+  let ult=false, mega=false, name="", bid, qid=null;
+  if(S.stage % CONFIG.level.ultEvery === 0){ ult=true; const g=GODS_1[Math.floor(Math.random()*GODS_1.length)]; bid=g.attr; name=g.name; qid=g.id; }
+  else if(S.stage % CONFIG.level.megaEvery === 0){ mega=true; const g=GODS_2[Math.floor(Math.random()*GODS_2.length)]; bid=g.attr; name=g.name; qid=g.id; }
+  else { const gi=POKEDEX_KEYS[Math.floor(Math.random()*POKEDEX_KEYS.length)]; bid=PK(gi).attr; name=PK(gi).name; qid=gi; }
   S.bossId = bid;
   const a = rand(0, Math.PI*2);
   const d = Math.max(W,H)*0.5 + 60;
@@ -1792,44 +1856,63 @@ function spawnBoss(){
   S.enemies.push({ type:"boss", attr:bid, name, mega, ult, x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d,
     r: ult?74: mega?58:40, hp:base*m, maxHp:base*m, speed: ult?44: mega?40:32, dmg: ult?60: mega?50:35, exp:0,
     angle:a, wob:0, elite:false, dead:false,
-    bskills: rollBossSkills(ult,mega), bskillCd: rand(2,4), bskillT:0, chargeT:0 });
+    bskills: rollBossSkills(ult,mega), bskillCd: rand(2,4), bskillT:0, chargeT:0, qid });
   const tag = ult ? ("终极 Boss · "+name) : mega ? ("大 Boss · "+name) : ("BOSS 来袭 · "+name);
   showBanner(tag);
   sndExplode(true);
 }
-function captureBoss(){                                // Boss 捕捉：3 次机会，每次概率随机 ≤30%
+function captureBoss(){                                // Boss 捕捉：捕捉/放弃 2 选 1 · 每次概率 ≤30% · 重复可出售 +20
   const attr = S.bossId;
   const pool = POKEDEX_BY_ATTR[attr]||POKEDEX_KEYS;
   const unowned = pool.filter(id=>!S.roster[id]);
-  if(!unowned.length){ finishStage(); return; }               // 同系全拥有：直接过关
-  S.catchTarget = unowned[Math.floor(Math.random()*unowned.length)];
+  const cand = unowned.length ? unowned : pool;              // 允许重复：重复捕捉可出售 +20
+  S.catchTarget = cand[Math.floor(Math.random()*cand.length)];
   S.catchLeft = 3;
   const pkm=PK(S.catchTarget);
-  $("catch-avatar").textContent = (ATTR_TEXT[attr]||ATTR_TEXT.normal).attr;
-  $("catch-avatar").style.background = "radial-gradient(circle at 35% 30%,"+(ATTR_TEXT[attr]||ATTR_TEXT.normal).color+",#0f172a)";
+  const tier=roleTier(S.catchTarget);
+  const g=$("catch-av").getContext("2d");
+  drawQ(S.catchTarget,60,64,44,0,3,g);
   $("catch-name").textContent = pkm.name+"（"+((ATTR_TEXT[attr]||ATTR_TEXT.normal).attr)+" 系）";
-  for(let i=1;i<=3;i++){ const b=$("ball-"+i); b.disabled=false; b.classList.remove("used"); }
-  $("catch-hint").textContent = "共 3 次机会 · 每次成功概率随机（不超过 30%）";
+  $("catch-avhint").textContent = S.roster[S.catchTarget] ? "已拥有该精灵 · 捕捉成功将自动出售 +20 金币" :
+    (tier===3?"一级神 · 自带 1 红 1 金品质技能":tier===2?"二级神 · 自带 1 金 1 蓝品质技能":tier===1?"幻兽 · 自带 1 金品质技能":"普通精灵 · 自带 1 蓝品质技能");
+  $("catch-hint").textContent = "共 3 次机会 · 每次成功概率随机（不超过 30%）· 可随时放弃";
   show("catch"); S.mode="catch"; S.timeScale=0;
 }
-function tryCatch(){
+function tryCatch(){                                        // 点击捕捉：播放经典精灵球动画
   if(S.catchLeft<=0) return;
-  const chance = 0.15 + Math.random()*0.15;                   // 15%~30% 每次随机
-  if(Math.random() < chance){
-    S.roster[S.catchTarget]=1;
+  hide("catch"); show("catch-anim"); S.mode="catch-anim"; S.timeScale=0;
+  const g=$("ca-pkm").getContext("2d");
+  drawQ(S.catchTarget,60,62,42,0,3,g);
+  $("ca-pkm").classList.remove("in");
+  const ball=$("ca-ball"); ball.classList.remove("fly","shake");
+  void ball.offsetWidth; ball.classList.add("fly");
+  $("ca-hint").textContent = "精灵球飞出了…";
+  setTimeout(()=>{ $("ca-pkm").classList.add("in"); ball.classList.remove("fly"); ball.classList.add("shake"); $("ca-hint").textContent="球在摇晃…"; }, 900);
+  setTimeout(()=>{ finishCatchAnim( Math.random() < (0.15+Math.random()*0.15) ); }, 3300);
+}
+function finishCatchAnim(ok){
+  hide("catch-anim");
+  if(ok){
+    const id=S.catchTarget;
+    if(S.roster[id]){                                   // 重复精灵：自动出售 +20
+      S.coins+=20; S.runCoins+=20; saveProgress();
+      showBanner("重复精灵 "+PK(id).name+" 已出售 · 金币 +20");
+      sndLevel(); finishStage(); return;
+    }
+    S.roster[id]=1;
     const shiny = Math.random()<1/8192;
-    if(shiny) S.shiny[S.catchTarget]=true;
+    if(shiny) S.shiny[id]=true;
     saveProgress();
-    showBanner("捕捉到 "+(shiny?"★闪光 ":"")+PK(S.catchTarget).name+"！");
+    showBanner("捕捉到 "+(shiny?"★闪光 ":"")+PK(id).name+"！");
     sndLevel();
-    if(S.lastUlt) rollUltLoot();                             // 终极 Boss：1% 掉道具
+    if(S.lastUlt) rollUltLoot();                         // 终极 Boss：1% 掉道具
     finishStage();
   } else {
     S.catchLeft--;
-    const b=$("ball-"+(3-S.catchLeft)); if(b){ b.disabled=true; b.classList.add("used"); }
-    $("catch-hint").textContent = "没抓到！还有 "+S.catchLeft+" 次机会（≤30%）";
     sndHit(false);
-    if(S.catchLeft<=0){ showBanner("Boss 逃走了…"); finishStage(); }
+    if(S.catchLeft<=0){ showBanner("Boss 逃走了…"); finishStage(); return; }
+    $("catch-hint").textContent = "没抓到！还有 "+S.catchLeft+" 次机会（≤30%）· 可再捕捉或放弃";
+    S.mode="catch"; show("catch");
   }
 }
 function rollUltLoot(){                                      // 终极 Boss 1% 掉落：Mega 石 / 极巨 / Z（不重复）
@@ -1849,13 +1932,13 @@ function rollUltLoot(){                                      // 终极 Boss 1% �
   sndLevel();
 }
 function finishStage(){
-  S.mode="playing"; S.timeScale=1; hide("catch");
+  S.mode="playing"; S.timeScale=1; hide("catch"); hide("catch-anim");
   S.bossActive = false;
   S.stage++;
   S.stageTimer = CONFIG.level.duration;
   S.enemies.length = 0; S.bullets.length = 0; S.puddles.length = 0; S.ebullets.length = 0; S.bossAoEs.length = 0;
   const p = S.player;
-  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 · 装甲每关 +1（最多 3 层）
+  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 3 层（上限 150）· 装甲每关 +1（最多 3 层）
   refreshHpUI(); syncShieldUI(); syncArmorUI();
   S.dyna = false; S.dynaT = 0; S.dynaCharges = 1;               // 每关 1 次极巨化
   updatePowerUI();
@@ -2524,6 +2607,278 @@ const SKILLS=[
   { id:"thunderbolt",   name:"十万伏特", max:3, rarity:2, fn:"thunderbolt", desc:"每 7 秒十万伏特连环电击" },
   { id:"seedbomb",      name:"种子炸弹", max:3, rarity:1, fn:"seedbomb",    desc:"每 7.5 秒散射种子炸弹爆炸" },
 ];
+const ATTR_SKILLS=[
+  { id:"normal_s01", name:"普增幅", max:3, rarity:0, quality:"white", attr:"normal", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"normal_s02", name:"均衡连射", max:3, rarity:0, quality:"white", attr:"normal", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"normal_s03", name:"稳健会心", max:3, rarity:1, quality:"blue", attr:"normal", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"normal_s04", name:"标准齐射", max:3, rarity:1, quality:"blue", attr:"normal", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"normal_s05", name:"普贯穿", max:3, rarity:1, quality:"blue", attr:"normal", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"normal_s06", name:"均衡体质", max:3, rarity:0, quality:"white", attr:"normal", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"normal_s07", name:"稳健再生", max:3, rarity:1, quality:"blue", attr:"normal", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"normal_s08", name:"标准虹吸", max:3, rarity:0, quality:"white", attr:"normal", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"normal_s09", name:"普收割", max:3, rarity:2, quality:"gold", attr:"normal", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"normal_s10", name:"均衡荆棘", max:3, rarity:1, quality:"blue", attr:"normal", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"normal_s11", name:"稳健狂暴", max:3, rarity:2, quality:"gold", attr:"normal", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"normal_s12", name:"稳健爆发", max:3, rarity:0, quality:"white", attr:"normal", fn:"barrage", desc:"主动 · 弹幕风暴（主动 · 周期性释放）" },
+  { id:"normal_s13", name:"普风暴", max:3, rarity:2, quality:"gold", attr:"normal", fn:"twinbeam", desc:"主动 · 双光束（主动 · 周期性释放）" },
+  { id:"normal_s14", name:"均衡领域", max:3, rarity:2, quality:"gold", attr:"normal", fn:"blackhole", desc:"主动 · 引力坍缩（主动 · 周期性释放）" },
+  { id:"normal_s15", name:"究极标准究极", max:3, rarity:3, quality:"red", attr:"normal", fn:"gambler", desc:"主动 · 幸运骰子（专属究极 · 周期性释放）" },
+  { id:"fire_s01", name:"烈焰增幅", max:3, rarity:0, quality:"white", attr:"fire", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"fire_s02", name:"灼炎连射", max:3, rarity:0, quality:"white", attr:"fire", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"fire_s03", name:"焚火会心", max:3, rarity:1, quality:"blue", attr:"fire", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"fire_s04", name:"焰齐射", max:3, rarity:1, quality:"blue", attr:"fire", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"fire_s05", name:"烈焰贯穿", max:3, rarity:1, quality:"blue", attr:"fire", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"fire_s06", name:"灼炎体质", max:3, rarity:0, quality:"white", attr:"fire", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"fire_s07", name:"焚火再生", max:3, rarity:1, quality:"blue", attr:"fire", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"fire_s08", name:"焰虹吸", max:3, rarity:0, quality:"white", attr:"fire", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"fire_s09", name:"烈焰收割", max:3, rarity:2, quality:"gold", attr:"fire", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"fire_s10", name:"灼炎荆棘", max:3, rarity:1, quality:"blue", attr:"fire", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"fire_s11", name:"焚火狂暴", max:3, rarity:2, quality:"gold", attr:"fire", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"fire_s12", name:"焚火爆发", max:3, rarity:0, quality:"white", attr:"fire", fn:"fireball", desc:"主动 · 烈焰冲击（主动 · 周期性释放）" },
+  { id:"fire_s13", name:"烈焰风暴", max:3, rarity:2, quality:"gold", attr:"fire", fn:"overheat", desc:"主动 · 过热（主动 · 周期性释放）" },
+  { id:"fire_s14", name:"灼炎领域", max:3, rarity:2, quality:"gold", attr:"fire", fn:"solarflare", desc:"主动 · 烈日（主动 · 周期性释放）" },
+  { id:"fire_s15", name:"究极焰究极", max:3, rarity:3, quality:"red", attr:"fire", fn:"novaflare", desc:"主动 · 新星爆发（专属究极 · 周期性释放）" },
+  { id:"water_s01", name:"激流增幅", max:3, rarity:0, quality:"white", attr:"water", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"water_s02", name:"浪涛连射", max:3, rarity:0, quality:"white", attr:"water", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"water_s03", name:"潮汐会心", max:3, rarity:1, quality:"blue", attr:"water", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"water_s04", name:"水齐射", max:3, rarity:1, quality:"blue", attr:"water", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"water_s05", name:"激流贯穿", max:3, rarity:1, quality:"blue", attr:"water", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"water_s06", name:"浪涛体质", max:3, rarity:0, quality:"white", attr:"water", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"water_s07", name:"潮汐再生", max:3, rarity:1, quality:"blue", attr:"water", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"water_s08", name:"水虹吸", max:3, rarity:0, quality:"white", attr:"water", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"water_s09", name:"激流收割", max:3, rarity:2, quality:"gold", attr:"water", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"water_s10", name:"浪涛荆棘", max:3, rarity:1, quality:"blue", attr:"water", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"water_s11", name:"潮汐狂暴", max:3, rarity:2, quality:"gold", attr:"water", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"water_s12", name:"潮汐爆发", max:3, rarity:0, quality:"white", attr:"water", fn:"hydro", desc:"主动 · 高压水炮（主动 · 周期性释放）" },
+  { id:"water_s13", name:"激流风暴", max:3, rarity:2, quality:"gold", attr:"water", fn:"frostnova", desc:"主动 · 冰冻新星（主动 · 周期性释放）" },
+  { id:"water_s14", name:"浪涛领域", max:3, rarity:2, quality:"gold", attr:"water", fn:"frostwave", desc:"主动 · 寒霜波（主动 · 周期性释放）" },
+  { id:"water_s15", name:"究极水究极", max:3, rarity:3, quality:"red", attr:"water", fn:"blizzard", desc:"主动 · 暴风雪（专属究极 · 周期性释放）" },
+  { id:"grass_s01", name:"藤蔓增幅", max:3, rarity:0, quality:"white", attr:"grass", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"grass_s02", name:"叶刃连射", max:3, rarity:0, quality:"white", attr:"grass", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"grass_s03", name:"花蕾会心", max:3, rarity:1, quality:"blue", attr:"grass", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"grass_s04", name:"种子齐射", max:3, rarity:1, quality:"blue", attr:"grass", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"grass_s05", name:"藤蔓贯穿", max:3, rarity:1, quality:"blue", attr:"grass", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"grass_s06", name:"叶刃体质", max:3, rarity:0, quality:"white", attr:"grass", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"grass_s07", name:"花蕾再生", max:3, rarity:1, quality:"blue", attr:"grass", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"grass_s08", name:"种子虹吸", max:3, rarity:0, quality:"white", attr:"grass", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"grass_s09", name:"藤蔓收割", max:3, rarity:2, quality:"gold", attr:"grass", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"grass_s10", name:"叶刃荆棘", max:3, rarity:1, quality:"blue", attr:"grass", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"grass_s11", name:"花蕾狂暴", max:3, rarity:2, quality:"gold", attr:"grass", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"grass_s12", name:"花蕾爆发", max:3, rarity:0, quality:"white", attr:"grass", fn:"seedbomb", desc:"主动 · 种子炸弹（主动 · 周期性释放）" },
+  { id:"grass_s13", name:"藤蔓风暴", max:3, rarity:2, quality:"gold", attr:"grass", fn:"gigadrain", desc:"主动 · 超级汲取（主动 · 周期性释放）" },
+  { id:"grass_s14", name:"叶刃领域", max:3, rarity:2, quality:"gold", attr:"grass", fn:"poisoncloud", desc:"主动 · 毒云（主动 · 周期性释放）" },
+  { id:"grass_s15", name:"究极种子究极", max:3, rarity:3, quality:"red", attr:"grass", fn:"meteor", desc:"主动 · 陨石雨（专属究极 · 周期性释放）" },
+  { id:"elec_s01", name:"雷鸣增幅", max:3, rarity:0, quality:"white", attr:"elec", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"elec_s02", name:"闪电连射", max:3, rarity:0, quality:"white", attr:"elec", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"elec_s03", name:"电光会心", max:3, rarity:1, quality:"blue", attr:"elec", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"elec_s04", name:"伏特齐射", max:3, rarity:1, quality:"blue", attr:"elec", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"elec_s05", name:"雷鸣贯穿", max:3, rarity:1, quality:"blue", attr:"elec", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"elec_s06", name:"闪电体质", max:3, rarity:0, quality:"white", attr:"elec", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"elec_s07", name:"电光再生", max:3, rarity:1, quality:"blue", attr:"elec", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"elec_s08", name:"伏特虹吸", max:3, rarity:0, quality:"white", attr:"elec", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"elec_s09", name:"雷鸣收割", max:3, rarity:2, quality:"gold", attr:"elec", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"elec_s10", name:"闪电荆棘", max:3, rarity:1, quality:"blue", attr:"elec", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"elec_s11", name:"电光狂暴", max:3, rarity:2, quality:"gold", attr:"elec", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"elec_s12", name:"电光爆发", max:3, rarity:0, quality:"white", attr:"elec", fn:"lightning", desc:"主动 · 闪电链（主动 · 周期性释放）" },
+  { id:"elec_s13", name:"雷鸣风暴", max:3, rarity:2, quality:"gold", attr:"elec", fn:"thunderbolt", desc:"主动 · 十万伏特（主动 · 周期性释放）" },
+  { id:"elec_s14", name:"闪电领域", max:3, rarity:2, quality:"gold", attr:"elec", fn:"storm", desc:"主动 · 雷暴（主动 · 周期性释放）" },
+  { id:"elec_s15", name:"究极伏特究极", max:3, rarity:3, quality:"red", attr:"elec", fn:"gambler", desc:"主动 · 幸运骰子（专属究极 · 周期性释放）" },
+  { id:"ice_s01", name:"霜冻增幅", max:3, rarity:0, quality:"white", attr:"ice", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"ice_s02", name:"寒冰连射", max:3, rarity:0, quality:"white", attr:"ice", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"ice_s03", name:"极寒会心", max:3, rarity:1, quality:"blue", attr:"ice", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"ice_s04", name:"雪齐射", max:3, rarity:1, quality:"blue", attr:"ice", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"ice_s05", name:"霜冻贯穿", max:3, rarity:1, quality:"blue", attr:"ice", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"ice_s06", name:"寒冰体质", max:3, rarity:0, quality:"white", attr:"ice", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"ice_s07", name:"极寒再生", max:3, rarity:1, quality:"blue", attr:"ice", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"ice_s08", name:"雪虹吸", max:3, rarity:0, quality:"white", attr:"ice", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"ice_s09", name:"霜冻收割", max:3, rarity:2, quality:"gold", attr:"ice", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"ice_s10", name:"寒冰荆棘", max:3, rarity:1, quality:"blue", attr:"ice", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"ice_s11", name:"极寒狂暴", max:3, rarity:2, quality:"gold", attr:"ice", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"ice_s12", name:"极寒爆发", max:3, rarity:0, quality:"white", attr:"ice", fn:"frostnova", desc:"主动 · 冰冻新星（主动 · 周期性释放）" },
+  { id:"ice_s13", name:"霜冻风暴", max:3, rarity:2, quality:"gold", attr:"ice", fn:"frostwave", desc:"主动 · 寒霜波（主动 · 周期性释放）" },
+  { id:"ice_s14", name:"寒冰领域", max:3, rarity:2, quality:"gold", attr:"ice", fn:"blizzard", desc:"主动 · 暴风雪（主动 · 周期性释放）" },
+  { id:"ice_s15", name:"究极雪究极", max:3, rarity:3, quality:"red", attr:"ice", fn:"blackhole", desc:"主动 · 引力坍缩（专属究极 · 周期性释放）" },
+  { id:"fight_s01", name:"铁拳增幅", max:3, rarity:0, quality:"white", attr:"fight", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"fight_s02", name:"格斗连射", max:3, rarity:0, quality:"white", attr:"fight", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"fight_s03", name:"斗气会心", max:3, rarity:1, quality:"blue", attr:"fight", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"fight_s04", name:"战意齐射", max:3, rarity:1, quality:"blue", attr:"fight", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"fight_s05", name:"铁拳贯穿", max:3, rarity:1, quality:"blue", attr:"fight", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"fight_s06", name:"格斗体质", max:3, rarity:0, quality:"white", attr:"fight", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"fight_s07", name:"斗气再生", max:3, rarity:1, quality:"blue", attr:"fight", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"fight_s08", name:"战意虹吸", max:3, rarity:0, quality:"white", attr:"fight", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"fight_s09", name:"铁拳收割", max:3, rarity:2, quality:"gold", attr:"fight", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"fight_s10", name:"格斗荆棘", max:3, rarity:1, quality:"blue", attr:"fight", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"fight_s11", name:"斗气狂暴", max:3, rarity:2, quality:"gold", attr:"fight", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"fight_s12", name:"斗气爆发", max:3, rarity:0, quality:"white", attr:"fight", fn:"fireball", desc:"主动 · 烈焰冲击（主动 · 周期性释放）" },
+  { id:"fight_s13", name:"铁拳风暴", max:3, rarity:2, quality:"gold", attr:"fight", fn:"twinbeam", desc:"主动 · 双光束（主动 · 周期性释放）" },
+  { id:"fight_s14", name:"格斗领域", max:3, rarity:2, quality:"gold", attr:"fight", fn:"barrage", desc:"主动 · 弹幕风暴（主动 · 周期性释放）" },
+  { id:"fight_s15", name:"究极战意究极", max:3, rarity:3, quality:"red", attr:"fight", fn:"overclock", desc:"主动 · 超频模式（专属究极 · 周期性释放）" },
+  { id:"poison_s01", name:"毒雾增幅", max:3, rarity:0, quality:"white", attr:"poison", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"poison_s02", name:"腐蚀连射", max:3, rarity:0, quality:"white", attr:"poison", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"poison_s03", name:"瘴气会心", max:3, rarity:1, quality:"blue", attr:"poison", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"poison_s04", name:"酸蚀齐射", max:3, rarity:1, quality:"blue", attr:"poison", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"poison_s05", name:"毒雾贯穿", max:3, rarity:1, quality:"blue", attr:"poison", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"poison_s06", name:"腐蚀体质", max:3, rarity:0, quality:"white", attr:"poison", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"poison_s07", name:"瘴气再生", max:3, rarity:1, quality:"blue", attr:"poison", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"poison_s08", name:"酸蚀虹吸", max:3, rarity:0, quality:"white", attr:"poison", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"poison_s09", name:"毒雾收割", max:3, rarity:2, quality:"gold", attr:"poison", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"poison_s10", name:"腐蚀荆棘", max:3, rarity:1, quality:"blue", attr:"poison", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"poison_s11", name:"瘴气狂暴", max:3, rarity:2, quality:"gold", attr:"poison", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"poison_s12", name:"瘴气爆发", max:3, rarity:0, quality:"white", attr:"poison", fn:"poisoncloud", desc:"主动 · 毒云（主动 · 周期性释放）" },
+  { id:"poison_s13", name:"毒雾风暴", max:3, rarity:2, quality:"gold", attr:"poison", fn:"gigadrain", desc:"主动 · 超级汲取（主动 · 周期性释放）" },
+  { id:"poison_s14", name:"腐蚀领域", max:3, rarity:2, quality:"gold", attr:"poison", fn:"seedbomb", desc:"主动 · 种子炸弹（主动 · 周期性释放）" },
+  { id:"poison_s15", name:"究极酸蚀究极", max:3, rarity:3, quality:"red", attr:"poison", fn:"meteor", desc:"主动 · 陨石雨（专属究极 · 周期性释放）" },
+  { id:"ground_s01", name:"大地增幅", max:3, rarity:0, quality:"white", attr:"ground", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"ground_s02", name:"土崩连射", max:3, rarity:0, quality:"white", attr:"ground", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"ground_s03", name:"岩震会心", max:3, rarity:1, quality:"blue", attr:"ground", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"ground_s04", name:"山岳齐射", max:3, rarity:1, quality:"blue", attr:"ground", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"ground_s05", name:"大地贯穿", max:3, rarity:1, quality:"blue", attr:"ground", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"ground_s06", name:"土崩体质", max:3, rarity:0, quality:"white", attr:"ground", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"ground_s07", name:"岩震再生", max:3, rarity:1, quality:"blue", attr:"ground", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"ground_s08", name:"山岳虹吸", max:3, rarity:0, quality:"white", attr:"ground", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"ground_s09", name:"大地收割", max:3, rarity:2, quality:"gold", attr:"ground", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"ground_s10", name:"土崩荆棘", max:3, rarity:1, quality:"blue", attr:"ground", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"ground_s11", name:"岩震狂暴", max:3, rarity:2, quality:"gold", attr:"ground", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"ground_s12", name:"岩震爆发", max:3, rarity:0, quality:"white", attr:"ground", fn:"earthquake", desc:"主动 · 地裂（主动 · 周期性释放）" },
+  { id:"ground_s13", name:"大地风暴", max:3, rarity:2, quality:"gold", attr:"ground", fn:"blackhole", desc:"主动 · 引力坍缩（主动 · 周期性释放）" },
+  { id:"ground_s14", name:"土崩领域", max:3, rarity:2, quality:"gold", attr:"ground", fn:"meteor", desc:"主动 · 陨石雨（主动 · 周期性释放）" },
+  { id:"ground_s15", name:"究极山岳究极", max:3, rarity:3, quality:"red", attr:"ground", fn:"barrage", desc:"主动 · 弹幕风暴（专属究极 · 周期性释放）" },
+  { id:"flying_s01", name:"疾风增幅", max:3, rarity:0, quality:"white", attr:"flying", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"flying_s02", name:"翔翼连射", max:3, rarity:0, quality:"white", attr:"flying", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"flying_s03", name:"高空会心", max:3, rarity:1, quality:"blue", attr:"flying", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"flying_s04", name:"羽齐射", max:3, rarity:1, quality:"blue", attr:"flying", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"flying_s05", name:"疾风贯穿", max:3, rarity:1, quality:"blue", attr:"flying", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"flying_s06", name:"翔翼体质", max:3, rarity:0, quality:"white", attr:"flying", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"flying_s07", name:"高空再生", max:3, rarity:1, quality:"blue", attr:"flying", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"flying_s08", name:"羽虹吸", max:3, rarity:0, quality:"white", attr:"flying", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"flying_s09", name:"疾风收割", max:3, rarity:2, quality:"gold", attr:"flying", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"flying_s10", name:"翔翼荆棘", max:3, rarity:1, quality:"blue", attr:"flying", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"flying_s11", name:"高空狂暴", max:3, rarity:2, quality:"gold", attr:"flying", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"flying_s12", name:"高空爆发", max:3, rarity:0, quality:"white", attr:"flying", fn:"barrage", desc:"主动 · 弹幕风暴（主动 · 周期性释放）" },
+  { id:"flying_s13", name:"疾风风暴", max:3, rarity:2, quality:"gold", attr:"flying", fn:"twinbeam", desc:"主动 · 双光束（主动 · 周期性释放）" },
+  { id:"flying_s14", name:"翔翼领域", max:3, rarity:2, quality:"gold", attr:"flying", fn:"orbital", desc:"主动 · 轨道激光（主动 · 周期性释放）" },
+  { id:"flying_s15", name:"究极羽究极", max:3, rarity:3, quality:"red", attr:"flying", fn:"blackhole", desc:"主动 · 引力坍缩（专属究极 · 周期性释放）" },
+  { id:"psychic_s01", name:"念力增幅", max:3, rarity:0, quality:"white", attr:"psychic", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"psychic_s02", name:"超能连射", max:3, rarity:0, quality:"white", attr:"psychic", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"psychic_s03", name:"心灵会心", max:3, rarity:1, quality:"blue", attr:"psychic", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"psychic_s04", name:"精神齐射", max:3, rarity:1, quality:"blue", attr:"psychic", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"psychic_s05", name:"念力贯穿", max:3, rarity:1, quality:"blue", attr:"psychic", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"psychic_s06", name:"超能体质", max:3, rarity:0, quality:"white", attr:"psychic", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"psychic_s07", name:"心灵再生", max:3, rarity:1, quality:"blue", attr:"psychic", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"psychic_s08", name:"精神虹吸", max:3, rarity:0, quality:"white", attr:"psychic", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"psychic_s09", name:"念力收割", max:3, rarity:2, quality:"gold", attr:"psychic", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"psychic_s10", name:"超能荆棘", max:3, rarity:1, quality:"blue", attr:"psychic", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"psychic_s11", name:"心灵狂暴", max:3, rarity:2, quality:"gold", attr:"psychic", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"psychic_s12", name:"心灵爆发", max:3, rarity:0, quality:"white", attr:"psychic", fn:"orbital", desc:"主动 · 轨道激光（主动 · 周期性释放）" },
+  { id:"psychic_s13", name:"念力风暴", max:3, rarity:2, quality:"gold", attr:"psychic", fn:"plasmabeam", desc:"主动 · 等离子束（主动 · 周期性释放）" },
+  { id:"psychic_s14", name:"超能领域", max:3, rarity:2, quality:"gold", attr:"psychic", fn:"voidlance", desc:"主动 · 虚空枪（主动 · 周期性释放）" },
+  { id:"psychic_s15", name:"究极精神究极", max:3, rarity:3, quality:"red", attr:"psychic", fn:"cosmicray", desc:"主动 · 宇宙射线（专属究极 · 周期性释放）" },
+  { id:"bug_s01", name:"虫群增幅", max:3, rarity:0, quality:"white", attr:"bug", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"bug_s02", name:"蜂针连射", max:3, rarity:0, quality:"white", attr:"bug", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"bug_s03", name:"丝网会心", max:3, rarity:1, quality:"blue", attr:"bug", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"bug_s04", name:"甲壳齐射", max:3, rarity:1, quality:"blue", attr:"bug", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"bug_s05", name:"虫群贯穿", max:3, rarity:1, quality:"blue", attr:"bug", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"bug_s06", name:"蜂针体质", max:3, rarity:0, quality:"white", attr:"bug", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"bug_s07", name:"丝网再生", max:3, rarity:1, quality:"blue", attr:"bug", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"bug_s08", name:"甲壳虹吸", max:3, rarity:0, quality:"white", attr:"bug", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"bug_s09", name:"虫群收割", max:3, rarity:2, quality:"gold", attr:"bug", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"bug_s10", name:"蜂针荆棘", max:3, rarity:1, quality:"blue", attr:"bug", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"bug_s11", name:"丝网狂暴", max:3, rarity:2, quality:"gold", attr:"bug", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"bug_s12", name:"丝网爆发", max:3, rarity:0, quality:"white", attr:"bug", fn:"seedbomb", desc:"主动 · 种子炸弹（主动 · 周期性释放）" },
+  { id:"bug_s13", name:"虫群风暴", max:3, rarity:2, quality:"gold", attr:"bug", fn:"gigadrain", desc:"主动 · 超级汲取（主动 · 周期性释放）" },
+  { id:"bug_s14", name:"蜂针领域", max:3, rarity:2, quality:"gold", attr:"bug", fn:"poisoncloud", desc:"主动 · 毒云（主动 · 周期性释放）" },
+  { id:"bug_s15", name:"究极甲壳究极", max:3, rarity:3, quality:"red", attr:"bug", fn:"twinbeam", desc:"主动 · 双光束（专属究极 · 周期性释放）" },
+  { id:"rock_s01", name:"磐石增幅", max:3, rarity:0, quality:"white", attr:"rock", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"rock_s02", name:"岩刃连射", max:3, rarity:0, quality:"white", attr:"rock", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"rock_s03", name:"矿脉会心", max:3, rarity:1, quality:"blue", attr:"rock", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"rock_s04", name:"砾齐射", max:3, rarity:1, quality:"blue", attr:"rock", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"rock_s05", name:"磐石贯穿", max:3, rarity:1, quality:"blue", attr:"rock", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"rock_s06", name:"岩刃体质", max:3, rarity:0, quality:"white", attr:"rock", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"rock_s07", name:"矿脉再生", max:3, rarity:1, quality:"blue", attr:"rock", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"rock_s08", name:"砾虹吸", max:3, rarity:0, quality:"white", attr:"rock", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"rock_s09", name:"磐石收割", max:3, rarity:2, quality:"gold", attr:"rock", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"rock_s10", name:"岩刃荆棘", max:3, rarity:1, quality:"blue", attr:"rock", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"rock_s11", name:"矿脉狂暴", max:3, rarity:2, quality:"gold", attr:"rock", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"rock_s12", name:"矿脉爆发", max:3, rarity:0, quality:"white", attr:"rock", fn:"earthquake", desc:"主动 · 地裂（主动 · 周期性释放）" },
+  { id:"rock_s13", name:"磐石风暴", max:3, rarity:2, quality:"gold", attr:"rock", fn:"meteor", desc:"主动 · 陨石雨（主动 · 周期性释放）" },
+  { id:"rock_s14", name:"岩刃领域", max:3, rarity:2, quality:"gold", attr:"rock", fn:"blackhole", desc:"主动 · 引力坍缩（主动 · 周期性释放）" },
+  { id:"rock_s15", name:"究极砾究极", max:3, rarity:3, quality:"red", attr:"rock", fn:"barrage", desc:"主动 · 弹幕风暴（专属究极 · 周期性释放）" },
+  { id:"ghost_s01", name:"幽影增幅", max:3, rarity:0, quality:"white", attr:"ghost", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"ghost_s02", name:"鬼火连射", max:3, rarity:0, quality:"white", attr:"ghost", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"ghost_s03", name:"魂绕会心", max:3, rarity:1, quality:"blue", attr:"ghost", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"ghost_s04", name:"冥界齐射", max:3, rarity:1, quality:"blue", attr:"ghost", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"ghost_s05", name:"幽影贯穿", max:3, rarity:1, quality:"blue", attr:"ghost", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"ghost_s06", name:"鬼火体质", max:3, rarity:0, quality:"white", attr:"ghost", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"ghost_s07", name:"魂绕再生", max:3, rarity:1, quality:"blue", attr:"ghost", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"ghost_s08", name:"冥界虹吸", max:3, rarity:0, quality:"white", attr:"ghost", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"ghost_s09", name:"幽影收割", max:3, rarity:2, quality:"gold", attr:"ghost", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"ghost_s10", name:"鬼火荆棘", max:3, rarity:1, quality:"blue", attr:"ghost", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"ghost_s11", name:"魂绕狂暴", max:3, rarity:2, quality:"gold", attr:"ghost", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"ghost_s12", name:"魂绕爆发", max:3, rarity:0, quality:"white", attr:"ghost", fn:"phantomclaw", desc:"主动 · 幽灵爪（主动 · 周期性释放）" },
+  { id:"ghost_s13", name:"幽影风暴", max:3, rarity:2, quality:"gold", attr:"ghost", fn:"voidlance", desc:"主动 · 虚空枪（主动 · 周期性释放）" },
+  { id:"ghost_s14", name:"鬼火领域", max:3, rarity:2, quality:"gold", attr:"ghost", fn:"cosmicray", desc:"主动 · 宇宙射线（主动 · 周期性释放）" },
+  { id:"ghost_s15", name:"究极冥界究极", max:3, rarity:3, quality:"red", attr:"ghost", fn:"novaflare", desc:"主动 · 新星爆发（专属究极 · 周期性释放）" },
+  { id:"dragon_s01", name:"龙鳞增幅", max:3, rarity:0, quality:"white", attr:"dragon", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"dragon_s02", name:"龙爪连射", max:3, rarity:0, quality:"white", attr:"dragon", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"dragon_s03", name:"龙威会心", max:3, rarity:1, quality:"blue", attr:"dragon", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"dragon_s04", name:"暴龙齐射", max:3, rarity:1, quality:"blue", attr:"dragon", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"dragon_s05", name:"龙鳞贯穿", max:3, rarity:1, quality:"blue", attr:"dragon", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"dragon_s06", name:"龙爪体质", max:3, rarity:0, quality:"white", attr:"dragon", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"dragon_s07", name:"龙威再生", max:3, rarity:1, quality:"blue", attr:"dragon", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"dragon_s08", name:"暴龙虹吸", max:3, rarity:0, quality:"white", attr:"dragon", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"dragon_s09", name:"龙鳞收割", max:3, rarity:2, quality:"gold", attr:"dragon", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"dragon_s10", name:"龙爪荆棘", max:3, rarity:1, quality:"blue", attr:"dragon", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"dragon_s11", name:"龙威狂暴", max:3, rarity:2, quality:"gold", attr:"dragon", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"dragon_s12", name:"龙威爆发", max:3, rarity:0, quality:"white", attr:"dragon", fn:"dragonbreath", desc:"主动 · 龙息（主动 · 周期性释放）" },
+  { id:"dragon_s13", name:"龙鳞风暴", max:3, rarity:2, quality:"gold", attr:"dragon", fn:"cosmicray", desc:"主动 · 宇宙射线（主动 · 周期性释放）" },
+  { id:"dragon_s14", name:"龙爪领域", max:3, rarity:2, quality:"gold", attr:"dragon", fn:"overheat", desc:"主动 · 过热（主动 · 周期性释放）" },
+  { id:"dragon_s15", name:"究极暴龙究极", max:3, rarity:3, quality:"red", attr:"dragon", fn:"fireball", desc:"主动 · 烈焰冲击（专属究极 · 周期性释放）" },
+  { id:"dark_s01", name:"暗影增幅", max:3, rarity:0, quality:"white", attr:"dark", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"dark_s02", name:"黑夜连射", max:3, rarity:0, quality:"white", attr:"dark", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"dark_s03", name:"煞气会心", max:3, rarity:1, quality:"blue", attr:"dark", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"dark_s04", name:"恶意齐射", max:3, rarity:1, quality:"blue", attr:"dark", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"dark_s05", name:"暗影贯穿", max:3, rarity:1, quality:"blue", attr:"dark", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"dark_s06", name:"黑夜体质", max:3, rarity:0, quality:"white", attr:"dark", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"dark_s07", name:"煞气再生", max:3, rarity:1, quality:"blue", attr:"dark", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"dark_s08", name:"恶意虹吸", max:3, rarity:0, quality:"white", attr:"dark", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"dark_s09", name:"暗影收割", max:3, rarity:2, quality:"gold", attr:"dark", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"dark_s10", name:"黑夜荆棘", max:3, rarity:1, quality:"blue", attr:"dark", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"dark_s11", name:"煞气狂暴", max:3, rarity:2, quality:"gold", attr:"dark", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"dark_s12", name:"煞气爆发", max:3, rarity:0, quality:"white", attr:"dark", fn:"phantomclaw", desc:"主动 · 幽灵爪（主动 · 周期性释放）" },
+  { id:"dark_s13", name:"暗影风暴", max:3, rarity:2, quality:"gold", attr:"dark", fn:"voidlance", desc:"主动 · 虚空枪（主动 · 周期性释放）" },
+  { id:"dark_s14", name:"黑夜领域", max:3, rarity:2, quality:"gold", attr:"dark", fn:"gambler", desc:"主动 · 幸运骰子（主动 · 周期性释放）" },
+  { id:"dark_s15", name:"究极恶意究极", max:3, rarity:3, quality:"red", attr:"dark", fn:"barrage", desc:"主动 · 弹幕风暴（专属究极 · 周期性释放）" },
+  { id:"steel_s01", name:"钢铁增幅", max:3, rarity:0, quality:"white", attr:"steel", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"steel_s02", name:"合金连射", max:3, rarity:0, quality:"white", attr:"steel", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"steel_s03", name:"铆钉会心", max:3, rarity:1, quality:"blue", attr:"steel", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"steel_s04", name:"装甲齐射", max:3, rarity:1, quality:"blue", attr:"steel", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"steel_s05", name:"钢铁贯穿", max:3, rarity:1, quality:"blue", attr:"steel", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"steel_s06", name:"合金体质", max:3, rarity:0, quality:"white", attr:"steel", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"steel_s07", name:"铆钉再生", max:3, rarity:1, quality:"blue", attr:"steel", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"steel_s08", name:"装甲虹吸", max:3, rarity:0, quality:"white", attr:"steel", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"steel_s09", name:"钢铁收割", max:3, rarity:2, quality:"gold", attr:"steel", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"steel_s10", name:"合金荆棘", max:3, rarity:1, quality:"blue", attr:"steel", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"steel_s11", name:"铆钉狂暴", max:3, rarity:2, quality:"gold", attr:"steel", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"steel_s12", name:"铆钉爆发", max:3, rarity:0, quality:"white", attr:"steel", fn:"plasmabeam", desc:"主动 · 等离子束（主动 · 周期性释放）" },
+  { id:"steel_s13", name:"钢铁风暴", max:3, rarity:2, quality:"gold", attr:"steel", fn:"orbital", desc:"主动 · 轨道激光（主动 · 周期性释放）" },
+  { id:"steel_s14", name:"合金领域", max:3, rarity:2, quality:"gold", attr:"steel", fn:"twinbeam", desc:"主动 · 双光束（主动 · 周期性释放）" },
+  { id:"steel_s15", name:"究极装甲究极", max:3, rarity:3, quality:"red", attr:"steel", fn:"voidlance", desc:"主动 · 虚空枪（专属究极 · 周期性释放）" },
+  { id:"fairy_s01", name:"妖精增幅", max:3, rarity:0, quality:"white", attr:"fairy", fx:"dmg", desc:"伤害 +12%（每级）" },
+  { id:"fairy_s02", name:"星光连射", max:3, rarity:0, quality:"white", attr:"fairy", fx:"rate", desc:"射速 +15%（每级）" },
+  { id:"fairy_s03", name:"虹彩会心", max:3, rarity:1, quality:"blue", attr:"fairy", fx:"crit", desc:"子弹 14% 概率 3 倍伤害（每级）" },
+  { id:"fairy_s04", name:"仙力齐射", max:3, rarity:1, quality:"blue", attr:"fairy", fx:"multi", desc:"每级 +1 条弹道" },
+  { id:"fairy_s05", name:"妖精贯穿", max:3, rarity:1, quality:"blue", attr:"fairy", fx:"pierce", desc:"每级 +1 次穿透" },
+  { id:"fairy_s06", name:"星光体质", max:3, rarity:0, quality:"white", attr:"fairy", fx:"maxhp", desc:"装甲上限 +12%（每级）" },
+  { id:"fairy_s07", name:"虹彩再生", max:3, rarity:1, quality:"blue", attr:"fairy", fx:"regen", desc:"每秒回复 0.7 点装甲（每级）" },
+  { id:"fairy_s08", name:"仙力虹吸", max:3, rarity:0, quality:"white", attr:"fairy", fx:"lifesteal", desc:"子弹命中回复 0.5 点装甲（每级）" },
+  { id:"fairy_s09", name:"妖精收割", max:3, rarity:2, quality:"gold", attr:"fairy", fx:"vampkill", desc:"击杀回复 2 点装甲（每级）" },
+  { id:"fairy_s10", name:"星光荆棘", max:3, rarity:1, quality:"blue", attr:"fairy", fx:"thorns", desc:"冲撞你的敌人反受 7 点伤害（每级）" },
+  { id:"fairy_s11", name:"虹彩狂暴", max:3, rarity:2, quality:"gold", attr:"fairy", fx:"rage", desc:"击杀后 1.2 秒移速射速 +30%" },
+  { id:"fairy_s12", name:"虹彩爆发", max:3, rarity:0, quality:"white", attr:"fairy", fn:"fairyburst", desc:"主动 · 妖精爆发（主动 · 周期性释放）" },
+  { id:"fairy_s13", name:"妖精风暴", max:3, rarity:2, quality:"gold", attr:"fairy", fn:"novaflare", desc:"主动 · 新星爆发（主动 · 周期性释放）" },
+  { id:"fairy_s14", name:"星光领域", max:3, rarity:2, quality:"gold", attr:"fairy", fn:"plasmabeam", desc:"主动 · 等离子束（主动 · 周期性释放）" },
+  { id:"fairy_s15", name:"究极仙力究极", max:3, rarity:3, quality:"red", attr:"fairy", fn:"gigadrain", desc:"主动 · 超级汲取（专属究极 · 周期性释放）" },
+];
 const FUSIONS=[
   { a:"fireball",  b:"frostnova",  id:"icystorm",   name:"冰火风暴", max:3, rarity:3, fn:"icystorm",  fus:true, desc:"融合 · 同发冰火双球，引爆冰冻+灼烧" },
   { a:"lightning", b:"split",      id:"chainstorm", name:"连锁风暴", max:3, rarity:3, fn:"chainstorm", fus:true, desc:"融合 · 闪电链命中后分裂传导" },
@@ -2552,6 +2907,9 @@ function skillLvl(id){ return S.skills[id]||0; }
 function maxOf(id){ return (SKILLMAP[id]||{}).max||3; }
 function isFusion(id){ return !!(SKILLMAP[id]||{}).fus; }
 function skillFx(fx){ let v=0; for(const id in S.skills){ const s=SKILLMAP[id]; if(s && s.fx===fx && S.skills[id]>v) v=S.skills[id]; } return v; }
+const Q_COLOR={ white:"#cbd5e1", blue:"#60a5fa", gold:"#fbbf24", red:"#f87171" };
+const Q_NAME={ white:"白", blue:"蓝", gold:"金", red:"红" };
+function qOf(s){ return s.quality || (["white","blue","gold","red"][s.rarity]||"white"); }   // 品质：白 < 蓝 < 金 < 红
 function syncMaxHp(){
   const p=S.player; if(!p) return;
   const newMax = Math.round(100*(1+0.12*skillFx("maxhp")));
@@ -2840,8 +3198,8 @@ function tickSkills(dt){
     if(lvl<=0) continue;
     if(id==="sacred"){ if(p.hp<p.maxHp){ p.hp=Math.min(p.maxHp,p.hp+2*dt); refreshHpUI(); } }
     if(id==="overclock" && cd.overclock<=0){ cd.overclock=Math.max(2,11-lvl); S.buff.oc=3; }
-    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
-    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); } }
+    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<150){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
+    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<150){ p.shieldLvl++; syncShieldUI(); } }
     if(id==="bulwark" && cd.bulwark<=0){ cd.bulwark=Math.max(6,14-lvl*3); if(p.armor<3){ p.armor++; syncArmorUI(); burst(p.x,p.y,"#fbbf24",12,160); } }
     if(id==="shield_surge" && cd.shield_surge<=0){ cd.shield_surge=Math.max(8,18-lvl*4); S.shieldSurgeT=2.5; }
     const fn=SKILL_FN[id];
@@ -2871,7 +3229,8 @@ function renderChoices(){
   for(const u of pickChoices()){
     const el=document.createElement("div");
     el.className="card rarity-"+u.rarity;
-    el.innerHTML='<div class="ico">'+(ICONS[u.id]||(u.rarity===3?FUSION_ICON:SKILL_ICON))+'</div><div class="name">'+u.name+'</div><div class="desc">'+u.desc+'</div><div class="lvl">'+(u.max===99?"":(u.fus&&u.lvl===0?"合成：满级 2 合 1":"已强化 Lv."+u.lvl+" / "+u.max))+'</div>';
+    el.innerHTML='<div class="ico">'+(ICONS[u.id]||(u.rarity===3?FUSION_ICON:SKILL_ICON))+'</div><div class="name">'+u.name+'</div><div class="desc">'+u.desc+'</div><div class="lvl">'+(u.max===99?"":"品质 "+(Q_NAME[qOf(u)]||"白")+(u.fus&&u.lvl===0?" · 合成：满级 2 合 1":" · 已强化 Lv."+u.lvl+" / "+u.max))+'</div>';
+    el.style.borderColor = Q_COLOR[qOf(u)];
     el.addEventListener("click",()=>{
       u.apply(); sndLevel();
       S.mode="playing"; S.timeScale=1;
@@ -2899,7 +3258,7 @@ function refreshHpUI(){
 function syncShieldUI(){
   const p=S.player;
   $("shield-row").hidden = p.shieldLvl<=0;
-  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/3,0,1)+")";
+  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/150,0,1)+")";
   $("shield-num").textContent=p.shieldLvl;
 }
 function syncArmorUI(){
@@ -2937,7 +3296,7 @@ function refreshTopUI(){
 }
 
 /* ===== 渲染 ===== */
-function sceneCycle(){ return Math.floor((S.stage-1)/10) % 9; }  // 每 10 关换世代背景
+function sceneCycle(){ return ((S.bgStart||0) + Math.floor((S.stage-1)/10)) % 9; }  // 开局随机起点 · 每 10 关换世代背景
 function bgDecor(px,py,seed,draw){  // 视差装饰：以 seed 生成固定分布的景观点
   for(let i=0;i<40;i++){
     const x=(i*97.3)%(W+160)-80, y=(i*61.7)%(H+160)-80;
@@ -3279,7 +3638,7 @@ function drawPlayer(){
   if(p.flash>0 && Math.floor(p.flash*20)%2===0){ /* 受击闪烁帧 */ }
   else{
     const a = PK(id).attr;
-    attrDrawer(a)(p.x,p.y,rr,p.angle,form);
+    drawQ(S.activeRole,p.x,p.y,rr,p.angle,form);
   }
   // Mega 光翼
   if(roleMega(id)){
@@ -3319,8 +3678,7 @@ function drawPartners(){
     if(q.flash>0 && Math.floor(q.flash*20)%2===0) continue;
     const form=roleForm(q.id);
     const a=PK(q.id).attr;
-    const fn = attrDrawer(PK(q.id).attr);
-    fn(q.x,q.y,q.r*1.1,q.angle,form);
+    drawQ(q.id,q.x,q.y,q.r*1.1,q.angle,form);
     if(S.shiny[q.id]){
       CTX.strokeStyle="rgba(250,204,21,0.9)"; CTX.lineWidth=2;
       CTX.beginPath(); CTX.arc(q.x,q.y,q.r+7,0,6.28); CTX.stroke();
@@ -3570,6 +3928,168 @@ function drawNeutral(x,y,r,rot,form){ // 普通系：猫耳 + 胡须 + 卷尾（
   CTX.stroke();
   CTX.restore();
 }
+/* ===== Q 版原著风绘制（大头圆身 · 特征元素按原著） ===== */
+const Q_FEAT={
+  pichu:{c:"#facc15",b:"#fff7cc",parts:[["ear","long",-0.55,-0.5,0.5,"#0f172a"],["ear","long",0.55,-0.5,0.5,"#0f172a"],["tail","lightning",0,-0.2,0.9,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
+  pikachu:{c:"#facc15",b:"#fff7cc",parts:[["ear","long",-0.55,-0.5,0.55,"#0f172a"],["ear","long",0.55,-0.5,0.55,"#0f172a"],["tail","lightning",0,-0.2,0.9,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
+  raichu:{c:"#f59e0b",b:"#fef3c7",parts:[["ear","long",-0.55,-0.5,0.55,"#d97706"],["ear","long",0.55,-0.5,0.55,"#d97706"],["tail","lightning",0,-0.2,0.95,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
+  bulbasaur:{c:"#6ecb3c",b:"#d9f2c4",parts:[["ear","short",-0.5,-0.45,0.4,"#3f8f2a"],["ear","short",0.5,-0.45,0.4,"#3f8f2a"],["bud","",0,-0.05,0.75,"#f472b6"]]},
+  ivysaur:{c:"#5cb338",b:"#cdebb5",parts:[["ear","short",-0.5,-0.45,0.4,"#3f8f2a"],["ear","short",0.5,-0.45,0.4,"#3f8f2a"],["bud","",0,-0.05,0.85,"#f472b6"]]},
+  venusaur:{c:"#4c9b2f",b:"#b9e39c",parts:[["ear","short",-0.5,-0.45,0.4,"#2f6b1d"],["ear","short",0.5,-0.45,0.4,"#2f6b1d"],["bud","",0,-0.15,1.05,"#f472b6"]]},
+  charmander:{c:"#fb923c",b:"#ffe8d1",parts:[["tail","flame",0,0.55,0.8,"#f97316"]]},
+  charmeleon:{c:"#f97316",b:"#ffdcc0",parts:[["tail","flame",0,0.6,0.85,"#f97316"],["horn","short",-0.45,-0.5,0.35,"#d97706"],["horn","short",0.45,-0.5,0.35,"#d97706"]]},
+  charizard:{c:"#ea580c",b:"#ffd8ad",parts:[["tail","flame",0,0.65,0.95,"#f97316"],["wing","big",-0.5,-0.1,0.85,"#fbbf24"],["wing","big",0.5,-0.1,0.85,"#fbbf24"],["horn","short",-0.45,-0.5,0.35,"#c2410c"],["horn","short",0.45,-0.5,0.35,"#c2410c"]]},
+  squirtle:{c:"#38bdf8",b:"#e0f2fe",parts:[["shell","",0,0.35,0.85,"#b45309"],["tail","curl",0,0.95,0.5,"#38bdf8"]]},
+  wartortle:{c:"#0ea5e9",b:"#cff3fd",parts:[["shell","",0,0.35,0.9,"#92400e"],["tail","curl",0,0.95,0.55,"#0ea5e9"],["ear","round",-0.5,-0.5,0.3,"#0ea5e9"],["ear","round",0.5,-0.5,0.3,"#0ea5e9"]]},
+  blastoise:{c:"#0284c7",b:"#bae6fd",parts:[["shell","",0,0.35,1.0,"#78350f"],["tail","curl",0,0.95,0.6,"#0284c7"],["horn","short",-0.45,-0.5,0.3,"#075985"],["horn","short",0.45,-0.5,0.3,"#075985"]]},
+  mewtwo:{c:"#c084fc",b:"#f3e8ff",parts:[["tail","whip",0,0.2,1.3,"#c084fc"],["crest","crown",0,-0.55,0.5,"#a21caf"]]},
+  mew:{c:"#f9a8d4",b:"#fce7f3",parts:[["tail","whip",0,0.3,1.4,"#f9a8d4"]]},
+  "ho-oh":{c:"#f59e0b",b:"#fef3c7",parts:[["wing","big",-0.5,0,1.0,"#fbbf24"],["wing","big",0.5,0,1.0,"#fbbf24"],["tail","feather",0,0.85,1.0,"#f97316"]]},
+  lugia:{c:"#e2e8f0",b:"#f8fafc",parts:[["wing","big",-0.5,-0.1,1.1,"#cbd5e1"],["wing","big",0.5,-0.1,1.1,"#cbd5e1"],["horn","short",0,-0.7,0.4,"#94a3b8"]]},
+  groudon:{c:"#dc2626",b:"#fee2e2",parts:[["spike","",-0.6,-0.4,0.7,"#991b1b"],["spike","",0.6,-0.4,0.7,"#991b1b"],["horn","short",0,-0.7,0.5,"#b91c1c"]]},
+  kyogre:{c:"#2563eb",b:"#dbeafe",parts:[["fin","",0,-0.5,0.7,"#1e40af"],["whisker","",-0.6,0.3,0.6,"#60a5fa"],["whisker","",0.6,0.3,0.6,"#60a5fa"]]},
+  rayquaza:{c:"#16a34a",b:"#dcfce7",parts:[["horn","curved",-0.3,-0.6,0.5,"#15803d"],["horn","curved",0.3,-0.6,0.5,"#15803d"],["fin","",0,0.4,0.6,"#15803d"]]},
+  dialga:{c:"#64748b",b:"#e2e8f0",parts:[["crest","crown",0,-0.6,0.6,"#334155"],["horn","long",-0.5,-0.5,0.7,"#475569"],["horn","long",0.5,-0.5,0.7,"#475569"]]},
+  palkia:{c:"#f0abfc",b:"#fdf4ff",parts:[["crest","crown",0,-0.6,0.6,"#d946ef"],["wing","small",-0.7,0,0.6,"#f0abfc"],["wing","small",0.7,0,0.6,"#f0abfc"]]},
+  giratina:{c:"#334155",b:"#94a3b8",parts:[["horn","curved",-0.5,-0.55,0.7,"#1e293b"],["horn","curved",0.5,-0.55,0.7,"#1e293b"],["wing","big",0,0.1,1.4,"#0f172a"]]},
+  arceus:{c:"#f8fafc",b:"#f8fafc",parts:[["ring","",0,0,0.95,"#fbbf24"]]},
+  zekrom:{c:"#334155",b:"#cbd5e1",parts:[["crest","crown",0,-0.55,0.5,"#0f172a"],["wing","big",-0.4,-0.1,0.9,"#1e293b"],["wing","big",0.4,-0.1,0.9,"#1e293b"]]},
+  reshiram:{c:"#f8fafc",b:"#f1f5f9",parts:[["crest","crown",0,-0.6,0.5,"#94a3b8"],["wing","big",-0.4,-0.1,0.9,"#e2e8f0"],["wing","big",0.4,-0.1,0.9,"#e2e8f0"]]},
+  kyurem:{c:"#38bdf8",b:"#e0f2fe",parts:[["horn","long",-0.5,-0.55,0.8,"#0284c7"],["horn","long",0.5,-0.55,0.8,"#0284c7"]]},
+  xerneas:{c:"#3b82f6",b:"#dbeafe",parts:[["horn","antler",0,-0.6,0.8,"#1d4ed8"]]},
+  yveltal:{c:"#b91c1c",b:"#fee2e2",parts:[["wing","big",-0.5,-0.1,1.2,"#991b1b"],["wing","big",0.5,-0.1,1.2,"#991b1b"],["crest","crown",0,-0.55,0.5,"#7f1d1d"]]},
+  zygarde:{c:"#10b981",b:"#d1fae5",parts:[["crystal","",0,-0.5,0.5,"#fbbf24"],["spike","",-0.6,-0.4,0.5,"#059669"],["spike","",0.6,-0.4,0.5,"#059669"]]},
+  necrozma:{c:"#111827",b:"#475569",parts:[["crystal","",0,-0.55,0.7,"#818cf8"]]},
+  eternatus:{c:"#7c3aed",b:"#ddd6fe",parts:[["horn","curved",-0.4,-0.5,0.7,"#5b21b6"],["horn","curved",0.4,-0.5,0.7,"#5b21b6"],["fin","",0,0.3,0.5,"#8b5cf6"]]},
+  articuno:{c:"#38bdf8",b:"#e0f2fe",parts:[["wing","big",-0.5,-0.1,1.0,"#60a5fa"],["wing","big",0.5,-0.1,1.0,"#60a5fa"],["crest","crown",0,-0.55,0.4,"#0284c7"]]},
+  zapdos:{c:"#facc15",b:"#fef9c3",parts:[["wing","big",-0.5,-0.1,1.0,"#fbbf24"],["wing","big",0.5,-0.1,1.0,"#fbbf24"],["crest","crown",0,-0.55,0.5,"#ca8a04"]]},
+  moltres:{c:"#f97316",b:"#ffedd5",parts:[["wing","big",-0.5,-0.1,1.0,"#f97316"],["wing","big",0.5,-0.1,1.0,"#f97316"],["tail","flame",0,0.7,0.9,"#ef4444"]]},
+  suicune:{c:"#38bdf8",b:"#e0f2fe",parts:[["crest","crown",0,-0.5,0.7,"#1d4ed8"],["tail","whip",0,0.7,0.9,"#60a5fa"]]},
+  celebi:{c:"#4ade80",b:"#dcfce7",parts:[["wing","small",-0.7,0,0.5,"#bbf7d0"],["wing","small",0.7,0,0.5,"#bbf7d0"],["horn","short",0,-0.6,0.35,"#22c55e"]]},
+  regirock:{c:"#d6a15c",b:"#fde68a",parts:[["crystal","",0,-0.5,0.4,"#fbbf24"],["spike","",-0.6,-0.4,0.5,"#b07d3f"],["spike","",0.6,-0.4,0.5,"#b07d3f"]]},
+  jirachi:{c:"#e2e8f0",b:"#f8fafc",parts:[["star","",0,-0.55,0.5,"#fbbf24"]]},
+  latios:{c:"#3b82f6",b:"#dbeafe",parts:[["fin","",0,-0.5,0.6,"#1d4ed8"],["fin","",0,0.4,0.5,"#2563eb"]]},
+  cresselia:{c:"#f9a8d4",b:"#fce7f3",parts:[["moon","",0,-0.5,0.8,"#f0abfc"]]},
+  darkrai:{c:"#334155",b:"#64748b",parts:[["crest","crown",0,-0.55,0.5,"#0f172a"]]},
+  tornadus:{c:"#4ade80",b:"#dcfce7",parts:[["cloud","",0,-0.6,0.9,"#86efac"],["whisker","",-0.5,0.3,0.5,"#22c55e"],["whisker","",0.5,0.3,0.5,"#22c55e"]]},
+  landorus:{c:"#d6a15c",b:"#fde68a",parts:[["cloud","",0,-0.6,0.9,"#fbbf24"],["whisker","",-0.5,0.3,0.5,"#b07d3f"],["whisker","",0.5,0.3,0.5,"#b07d3f"]]},
+  cobalion:{c:"#60a5fa",b:"#dbeafe",parts:[["horn","long",-0.4,-0.5,0.6,"#2563eb"],["horn","long",0.4,-0.5,0.6,"#2563eb"]]},
+  marshadow:{c:"#94a3b8",b:"#e2e8f0",parts:[["crest","crown",0,-0.55,0.5,"#475569"],["tail","flame",0,0.6,0.7,"#fbbf24"]]},
+  nihilego:{c:"#f8fafc",b:"#f1f5f9",parts:[["tentacle","",-0.6,0.2,0.8,"#e2e8f0"],["tentacle","",0.6,0.2,0.8,"#e2e8f0"]]},
+  pheromosa:{c:"#f8fafc",b:"#f1f5f9",parts:[["antenna","",-0.4,-0.5,0.6,"#e2e8f0"],["antenna","",0.4,-0.5,0.6,"#e2e8f0"]]},
+  "tapu-lele":{c:"#f9a8d4",b:"#fce7f3",parts:[["crest","crown",0,-0.55,0.6,"#ec4899"]]},
+  regigigas:{c:"#f8fafc",b:"#e2e8f0",parts:[["crystal","",0,-0.5,0.35,"#ef4444"],["spike","",-0.6,-0.4,0.5,"#94a3b8"],["spike","",0.6,-0.4,0.5,"#94a3b8"]]},
+  eevee:{c:"#c98a4b",b:"#fde8c9",parts:[["ear","round",-0.5,-0.5,0.4,"#c98a4b"],["ear","round",0.5,-0.5,0.4,"#c98a4b"],["tail","fluffy",0,0.6,0.6,"#c98a4b"]]},
+  jigglypuff:{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.3,"#f9a8d4"],["ear","round",0.5,-0.5,0.3,"#f9a8d4"],["curl","",0,-0.55,0.4,"#f472b6"]]},
+  meowth:{c:"#fbbf24",b:"#fef3c7",parts:[["ear","long",-0.5,-0.5,0.4,"#b45309"],["ear","long",0.5,-0.5,0.4,"#b45309"],["coin","",0,-0.05,0.25,"#f59e0b"]]},
+  psyduck:{c:"#fde047",b:"#fefce8",parts:[["bill","",0,-0.05,0.35,"#f59e0b"]]},
+  snorlax:{c:"#3b82f6",b:"#dbeafe",parts:[["ear","short",-0.55,-0.5,0.35,"#3b82f6"],["ear","short",0.55,-0.5,0.35,"#3b82f6"],["belly","big",0,0.45,0.9,"#e2e8f0"]]},
+  gengar:{c:"#a78bfa",b:"#ede9fe",parts:[["ear","point",-0.5,-0.5,0.4,"#a78bfa"],["ear","point",0.5,-0.5,0.4,"#a78bfa"],["eye","red",-0.3,-0.2,0.15,"#f87171"],["eye","red",0.3,-0.2,0.15,"#f87171"]]},
+  gyarados:{c:"#2563eb",b:"#dbeafe",parts:[["whisker","",-0.7,0.25,0.7,"#f87171"],["whisker","",0.7,0.25,0.7,"#f87171"],["crest","crown",0,-0.5,0.6,"#1d4ed8"]]},
+  dragonite:{c:"#fb923c",b:"#ffedd5",parts:[["antenna","",-0.3,-0.6,0.5,"#f97316"],["antenna","",0.3,-0.6,0.5,"#f97316"],["wing","small",-0.7,0,0.5,"#7dd3fc"],["wing","small",0.7,0,0.5,"#7dd3fc"]]},
+  magikarp:{c:"#f97316",b:"#ffedd5",parts:[["whisker","",-0.6,0.2,0.6,"#fef3c7"],["whisker","",0.6,0.2,0.6,"#fef3c7"],["fin","",0,-0.5,0.5,"#f97316"]]},
+  "__normal":{c:"#cbd5e1",b:"#f1f5f9",parts:[["ear","round",-0.5,-0.5,0.4,"#cbd5e1"],["ear","round",0.5,-0.5,0.4,"#cbd5e1"]]},
+  "__fire":{c:"#f87171",b:"#fee2e2",parts:[["tail","flame",0,0.5,0.7,"#f97316"]]},
+  "__water":{c:"#38bdf8",b:"#e0f2fe",parts:[["tail","curl",0,0.6,0.6,"#38bdf8"]]},
+  "__grass":{c:"#4ade80",b:"#dcfce7",parts:[["bud","",0,-0.05,0.6,"#f472b6"]]},
+  "__elec":{c:"#facc15",b:"#fef9c3",parts:[["tail","lightning",0,-0.2,0.8,"#fbbf24"],["ear","point",-0.5,-0.5,0.4,"#facc15"],["ear","point",0.5,-0.5,0.4,"#facc15"]]},
+  "__ice":{c:"#7dd3fc",b:"#e0f2fe",parts:[["horn","long",-0.4,-0.5,0.5,"#a5f3fc"],["horn","long",0.4,-0.5,0.5,"#a5f3fc"]]},
+  "__fight":{c:"#f87171",b:"#fee2e2",parts:[["band","",0,-0.35,0.9,"#b91c1c"]]},
+  "__poison":{c:"#a78bfa",b:"#f3e8ff",parts:[["ear","point",-0.5,-0.5,0.4,"#a78bfa"],["ear","point",0.5,-0.5,0.4,"#a78bfa"]]},
+  "__ground":{c:"#d6a15c",b:"#fde8c9",parts:[["horn","short",0,-0.6,0.5,"#b07d3f"]]},
+  "__flying":{c:"#93c5fd",b:"#e0f2fe",parts:[["wing","small",-0.7,0,0.6,"#bfdbfe"],["wing","small",0.7,0,0.6,"#bfdbfe"]]},
+  "__psychic":{c:"#f0abfc",b:"#fdf4ff",parts:[["crest","moon",0,-0.5,0.7,"#e879f9"]]},
+  "__bug":{c:"#a3e635",b:"#ecfccb",parts:[["antenna","",-0.3,-0.5,0.5,"#a3e635"],["antenna","",0.3,-0.5,0.5,"#a3e635"],["wing","small",-0.7,0,0.5,"#d9f99d"],["wing","small",0.7,0,0.5,"#d9f99d"]]},
+  "__rock":{c:"#c98a4b",b:"#fbe8c8",parts:[["horn","short",-0.5,-0.6,0.6,"#8a5a2b"],["horn","short",0.5,-0.6,0.6,"#8a5a2b"]]},
+  "__ghost":{c:"#a78bfa",b:"#ede9fe",parts:[["tail","whip",0,0.5,0.8,"#a78bfa"]]},
+  "__dragon":{c:"#60a5fa",b:"#dbeafe",parts:[["horn","curved",-0.4,-0.5,0.6,"#3b82f6"],["horn","curved",0.4,-0.5,0.6,"#3b82f6"]]},
+  "__dark":{c:"#64748b",b:"#cbd5e1",parts:[["ear","point",-0.5,-0.5,0.4,"#334155"],["ear","point",0.5,-0.5,0.4,"#334155"]]},
+  "__steel":{c:"#94a3b8",b:"#e2e8f0",parts:[["horn","short",-0.5,-0.6,0.5,"#64748b"],["horn","short",0.5,-0.6,0.5,"#64748b"]]},
+  "__fairy":{c:"#f9a8d4",b:"#fce7f3",parts:[["wing","small",-0.7,0,0.5,"#fbcfe8"],["wing","small",0.7,0,0.5,"#fbcfe8"]]},
+};
+const Q_ATTR_IDS={normal:1,fire:1,water:1,grass:1,elec:1,ice:1,fight:1,poison:1,ground:1,flying:1,psychic:1,bug:1,rock:1,ghost:1,dragon:1,dark:1,steel:1,fairy:1};
+function qPart(kind,sub,dx,dy,s,c,R,C){
+  const X=dx*R*1.4, Y=dy*R*1.4, S=s*R;
+  C.fillStyle=c;
+  if(kind==="ear"){
+    if(sub==="long"){ C.beginPath(); C.moveTo(X-S*0.5,Y); C.lineTo(X-S*0.15,Y-S*1.6); C.lineTo(X+S*0.3,Y-S*0.35); C.closePath(); C.fill(); }
+    else if(sub==="round"){ C.beginPath(); C.arc(X,Y-S*0.5,S*0.55,0,6.28); C.fill(); }
+    else if(sub==="point"){ C.beginPath(); C.moveTo(X-S*0.5,Y); C.lineTo(X,Y-S*1.5); C.lineTo(X+S*0.5,Y); C.closePath(); C.fill(); }
+    else { C.beginPath(); C.moveTo(X-S*0.6,Y); C.lineTo(X,Y-S*1.2); C.lineTo(X+S*0.6,Y); C.closePath(); C.fill(); }
+  } else if(kind==="tail"){
+    if(sub==="lightning"){ C.beginPath(); C.moveTo(X-S*0.18,Y); C.lineTo(X-S*0.4,Y-S*0.9); C.lineTo(X+S*0.18,Y-S*0.5); C.lineTo(X+S*0.4,Y-S*1.2); C.lineTo(X+S*0.5,Y-S*0.1); C.lineTo(X-S*0.05,Y-S*0.35); C.closePath(); C.fill(); }
+    else if(sub==="flame"){ C.beginPath(); C.moveTo(X,Y+S*0.8); C.quadraticCurveTo(X-S*0.8,Y-S*0.2,X,Y-S*1.1); C.quadraticCurveTo(X+S*0.8,Y-S*0.2,X,Y+S*0.8); C.fill();
+      C.fillStyle="rgba(253,224,71,.9)"; C.beginPath(); C.moveTo(X,Y+S*0.5); C.quadraticCurveTo(X-S*0.4,Y-S*0.15,X,Y-S*0.7); C.quadraticCurveTo(X+S*0.4,Y-S*0.15,X,Y+S*0.5); C.fill(); }
+    else if(sub==="feather"){ for(let k=0;k<3;k++){ C.fillStyle=["#f97316","#fbbf24","#fef3c7"][k]; C.beginPath(); C.ellipse(X+k*S*0.12,Y+k*S*0.18,S*0.5-k*0.1,S*0.14,0.5,0,6.28); C.fill(); } }
+    else if(sub==="fluffy"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y+S*0.5,S*0.7,S*0.4,0.3,0,6.28); C.fill(); C.beginPath(); C.ellipse(X-S*0.4,Y+S*0.35,S*0.35,S*0.25,0.3,0,6.28); C.fill(); }
+    else { C.beginPath(); C.moveTo(X,Y); C.quadraticCurveTo(X+S*0.4,Y+S*0.3,X+S*0.15,Y+S*0.9); C.lineWidth=S*0.14; C.strokeStyle=c; C.stroke(); }
+  } else if(kind==="wing"){
+    if(sub==="big"){ C.beginPath(); C.moveTo(X,Y); C.lineTo(X-S*0.9,Y-S*1.1); C.lineTo(X-S*0.35,Y+S*0.5); C.closePath(); C.fill(); }
+    else { C.beginPath(); C.moveTo(X,Y); C.lineTo(X-S*0.7,Y-S*0.8); C.lineTo(X-S*0.2,Y+S*0.3); C.closePath(); C.fill(); }
+  } else if(kind==="horn"){
+    if(sub==="long"){ C.beginPath(); C.moveTo(X-S*0.25,Y); C.lineTo(X-S*0.4,Y-S*1.6); C.lineTo(X+S*0.25,Y-S*0.2); C.closePath(); C.fill(); }
+    else if(sub==="curved"){ C.beginPath(); C.moveTo(X,Y); C.quadraticCurveTo(X-S*0.5,Y-S*1.2,X+S*0.3,Y-S*1.5); C.lineWidth=S*0.22; C.lineCap="round"; C.strokeStyle=c; C.stroke(); }
+    else if(sub==="antler"){ C.beginPath(); C.moveTo(X-S*0.3,Y); C.quadraticCurveTo(X-S*0.4,Y-S*1.2,X,Y-S*1.4); C.quadraticCurveTo(X+S*0.4,Y-S*1.2,X+S*0.3,Y); C.lineWidth=S*0.18; C.strokeStyle=c; C.stroke();
+      for(const k of [-0.5,0.5]){ C.beginPath(); C.moveTo(X+k*S*0.25,Y-S*0.9); C.lineTo(X+k*S*0.55,Y-S*1.3); C.lineWidth=S*0.12; C.stroke(); } }
+    else { C.beginPath(); C.moveTo(X-S*0.3,Y); C.lineTo(X,Y-S*1.1); C.lineTo(X+S*0.3,Y); C.closePath(); C.fill(); }
+  } else if(kind==="shell"){
+    C.fillStyle=c; C.beginPath(); C.ellipse(X,Y+S*0.35,S*0.72,S*0.55,0,0,6.28); C.fill();
+    C.strokeStyle="rgba(120,53,15,.6)"; C.lineWidth=1.6;
+    C.beginPath(); C.ellipse(X,Y+S*0.35,S*0.72,S*0.55,0,0,6.28); C.stroke();
+    C.beginPath(); C.moveTo(X-S*0.72,Y+S*0.35); C.lineTo(X+S*0.72,Y+S*0.35); C.stroke();
+    C.beginPath(); C.moveTo(X,Y-S*0.2); C.lineTo(X,Y+S*0.9); C.stroke();
+  } else if(kind==="bud"){
+    C.fillStyle="#166534"; C.beginPath(); C.ellipse(X,Y-S*0.1,S*0.55,S*0.4,0,0,6.28); C.fill();
+    C.fillStyle=c; for(const k of [0,1,2]){ const a=1.5+k*2.1; C.beginPath(); C.ellipse(X+Math.cos(a)*S*0.5,Y-S*0.1+Math.sin(a)*S*0.4,S*0.3,S*0.16,a,0,6.28); C.fill(); }
+  } else if(kind==="crest"){
+    if(sub==="crown"){ C.beginPath(); C.moveTo(X-S*0.8,Y-S*0.2); C.lineTo(X-S*0.45,Y-S*1.1); C.lineTo(X,Y-S*0.4); C.lineTo(X+S*0.45,Y-S*1.1); C.lineTo(X+S*0.8,Y-S*0.2); C.closePath(); C.fill(); }
+    else if(sub==="moon"){ C.strokeStyle=c; C.lineWidth=S*0.3; C.beginPath(); C.arc(X,Y-S*0.2,S*0.7,1.0,5.4); C.stroke(); }
+    else { C.beginPath(); C.moveTo(X,Y); C.lineTo(X,Y-S*1.2); C.lineWidth=S*0.2; C.strokeStyle=c; C.stroke();
+      C.beginPath(); C.arc(X,Y-S*1.15,S*0.22,0,6.28); C.fill(); }
+  } else if(kind==="flame"){ C.fillStyle=c; C.beginPath(); C.moveTo(X,Y+S*0.7); C.quadraticCurveTo(X-S*0.7,Y-S*0.3,X,Y-S*1.0); C.quadraticCurveTo(X+S*0.7,Y-S*0.3,X,Y+S*0.7); C.fill(); }
+  else if(kind==="whisker"){ C.strokeStyle=c; C.lineWidth=S*0.12; C.beginPath(); C.moveTo(X,Y); C.quadraticCurveTo(X+S*0.5,Y+S*0.6,X+S*0.9,Y+S*0.3); C.stroke(); }
+  else if(kind==="cheek"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y,S*0.55,0,6.28); C.fill(); }
+  else if(kind==="antenna"){ C.strokeStyle=c; C.lineWidth=S*0.13; C.beginPath(); C.moveTo(X,Y); C.quadraticCurveTo(X-S*0.2,Y-S*1.1,X+S*0.15,Y-S*1.3); C.stroke();
+    C.fillStyle=c; C.beginPath(); C.arc(X+S*0.15,Y-S*1.3,S*0.16,0,6.28); C.fill(); }
+  else if(kind==="fin"){ C.beginPath(); C.moveTo(X-S*0.5,Y); C.lineTo(X,Y-S*1.2); C.lineTo(X+S*0.5,Y); C.closePath(); C.fill(); }
+  else if(kind==="spike"){ C.beginPath(); C.moveTo(X-S*0.35,Y); C.lineTo(X,Y-S*1.1); C.lineTo(X+S*0.35,Y); C.closePath(); C.fill(); }
+  else if(kind==="crystal"){ C.beginPath(); C.moveTo(X,Y-S*0.9); C.lineTo(X+S*0.35,Y); C.lineTo(X,Y+S*0.9); C.lineTo(X-S*0.35,Y); C.closePath(); C.fill(); }
+  else if(kind==="star"){ C.fillStyle=c; for(let k=0;k<5;k++){ const a=-1.57+k*1.256; C.beginPath(); C.arc(X+Math.cos(a)*S*0.7,Y-S*0.2+Math.sin(a)*S*0.7,S*0.16,0,6.28); C.fill(); } }
+  else if(kind==="ring"){ C.strokeStyle=c; C.lineWidth=S*0.16; C.beginPath(); C.ellipse(X,Y,S*0.95,S*0.55,0,0,6.28); C.stroke(); }
+  else if(kind==="cloud"){ C.fillStyle=c; C.beginPath(); C.arc(X-S*0.4,Y,S*0.45,0,6.28); C.arc(X+S*0.1,Y-S*0.1,S*0.55,0,6.28); C.arc(X+S*0.5,Y,S*0.4,0,6.28); C.arc(X+S*0.1,Y+S*0.15,S*0.6,0,6.28); C.fill(); }
+  else if(kind==="tentacle"){ C.strokeStyle=c; C.lineWidth=S*0.2; C.lineCap="round"; C.beginPath(); C.moveTo(X,Y); C.quadraticCurveTo(X-S*0.3,Y+S*0.9,X+S*0.4,Y+S*1.2); C.stroke(); }
+  else if(kind==="moon"){ C.strokeStyle=c; C.lineWidth=S*0.3; C.beginPath(); C.arc(X,Y-S*0.3,S*0.75,1.2,5.2); C.stroke(); }
+  else if(kind==="curl"){ C.strokeStyle=c; C.lineWidth=S*0.22; C.beginPath(); C.arc(X,Y-S*0.35,S*0.4,0.4,5.9); C.stroke(); }
+  else if(kind==="coin"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y,S*0.55,0,6.28); C.fill(); C.fillStyle="#fef3c7"; C.beginPath(); C.arc(X,Y,S*0.3,0,6.28); C.fill(); }
+  else if(kind==="bill"){ C.beginPath(); C.ellipse(X,Y+S*0.1,S*0.5,S*0.28,0,0,6.28); C.fill(); }
+  else if(kind==="belly"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y+S*0.45,S*0.55,S*0.42,0,0,6.28); C.fill(); }
+  else if(kind==="band"){ C.fillStyle=c; C.fillRect(X-S*0.9,Y-S*0.28,S*1.8,S*0.22); }
+  else if(kind==="eye"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y-S*0.18,S*0.5,0,6.28); C.fill(); }
+}
+function drawQ(id,x,y,r,rot,form,ctx){
+  const C=ctx||CTX;
+  const R0=POKEDEX[id];
+  const attr = R0?R0.attr : (Q_ATTR_IDS[id]? id : "normal");
+  const T=ATTR_TEXT[attr]||ATTR_TEXT.normal;
+  const F=Q_FEAT[id]||Q_FEAT["__"+attr]||null;
+  const bodyC = F?F.c : T.color;
+  const bellyC = (F&&F.b)?F.b : "rgba(255,255,255,.85)";
+  const R=r*(form>=3?1.22:(form>=2?1.08:0.9));
+  C.save(); C.translate(x,y); C.rotate(rot);
+  if(F&&F.parts) for(const pt of F.parts){ if(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing") qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C); }
+  C.fillStyle=bodyC;
+  C.beginPath(); C.ellipse(0,R*0.3,R*0.6,R*0.5,0,0,6.28); C.fill();
+  C.beginPath(); C.arc(0,-R*0.08,R*0.7,0,6.28); C.fill();
+  C.fillStyle=bellyC;
+  C.beginPath(); C.ellipse(0,R*0.48,R*0.38,R*0.28,0,0,6.28); C.fill();
+  if(F&&F.parts) for(const pt of F.parts){ if(!(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing")) qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C); }
+  C.fillStyle="#fff"; C.beginPath(); C.ellipse(-R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C.ellipse(R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C.fill();
+  C.fillStyle="#0f172a"; C.beginPath(); C.arc(-R*0.28,-R*0.14,R*0.09,0,6.28); C.arc(R*0.28,-R*0.14,R*0.09,0,6.28); C.fill();
+  C.fillStyle="#fff"; C.beginPath(); C.arc(-R*0.24,-R*0.19,R*0.035,0,6.28); C.arc(R*0.32,-R*0.19,R*0.035,0,6.28); C.fill();
+  C.strokeStyle="#0f172a"; C.lineWidth=1.6;
+  C.beginPath(); C.arc(0,R*0.02,R*0.12,0.15,Math.PI-0.15); C.stroke();
+  C.restore();
+}
 function attrDrawer(attr){
   const M={
     fire:drawFire, elec:drawElec, ice:drawIce, water:drawWater, grass:drawGrass,
@@ -3619,7 +4139,7 @@ function drawEnemies(){
         CTX.restore();
         if(Math.random()<0.5) burst(e.x+rand(-e.r,e.r), e.y+rand(-e.r,e.r), e.ult?"#c084fc":"#fde047", 2, 70);
       }
-      attrDrawer(e.attr)(e.x,e.y,e.r,rot,3);
+      drawQ(e.qid||e.attr,e.x,e.y,e.r,rot,3);
     }
     else if(e.type==="elite") drawCharizard(e.x,e.y,e.r,rot);
     else if(e.type==="brute") drawSnorlax(e.x,e.y,e.r,rot);
@@ -3827,6 +4347,7 @@ function renderPartyBar(){
     bar.appendChild(slot);
   }
 }
+const STARTER3=["bulbasaur","charmander","squirtle"];   // 御三家：100 金币直接解锁
 function renderCollection(){
   refreshMenuCoins();
   const ownedCount = POKEDEX_KEYS.filter(id=>S.roster[id]).length;
@@ -3867,10 +4388,10 @@ function renderCollection(){
     card.title = "进化链："+(R.mid?("→ "+R.mid+(R.top?(" → "+R.top):"")):"无进化");
     card.innerHTML=
       (S.shiny[id]?'<div class="col-tag">★</div>':'')+
-      '<div class="col-dot" style="background:'+(owned?T.color:"rgba(148,163,184,.15)")+'">'+(owned?T.attr:"·")+'</div>'+
+      '<canvas class="col-av" width="52" height="52"></canvas>'+
       '<div class="col-name">'+(owned?roleName(id):R.name)+'</div>'+
       '<div class="col-attr">G'+R.gen+' · '+T.attr+'属性 · '+(owned?("形态 "+form+"/"+roleMaxForm(id)+(S.shiny[id]?" ★闪光":"")):"未捕捉")+'</div>'+
-      '<div class="col-skill">'+(owned?(T.skills[Math.min(form,3)-1]+" · "+T.desc):"击败"+T.attr+"系 Boss 可捕捉")+'</div>';
+      '<div class="col-skill">'+(owned?(T.skills[Math.min(form,3)-1]+" · "+T.desc):(STARTER3.includes(id)?"御三家 · 可金币解锁":"击败"+T.attr+"系 Boss 可捕捉"))+'</div>';
     if(owned){
       const actions=document.createElement("div"); actions.className="col-actions";
       const ev=document.createElement("button"); ev.className="btn-evolve";
@@ -3890,7 +4411,11 @@ function renderCollection(){
       const mz=document.createElement("button"); mz.className="btn-pick";
       mz.textContent = id===S.activeRole ? "主战" : "设主战";
       if(id===S.activeRole){ mz.classList.add("used"); }
-      else mz.addEventListener("click",()=>{ S.activeRole=id; S.party=S.party.filter(x=>x!==id); saveProgress(); renderCollection(); });
+      else mz.addEventListener("click",()=>{
+        const na=PK(id).attr;
+        if(!S.attrPick[na]){ S.pendingRole=id; hide("collection"); openAttrPick(na, ()=>{ S.activeRole=S.pendingRole; S.pendingRole=null; S.party=S.party.filter(x=>x!==S.activeRole); saveProgress(); openCollection(); }); }
+        else { S.activeRole=id; S.party=S.party.filter(x=>x!==id); saveProgress(); renderCollection(); }
+      });
       // Mega 石（原著可 Mega 名单内）
       if(canMega(id)){
         const mb=document.createElement("button"); mb.className="btn-pick";
@@ -3909,6 +4434,19 @@ function renderCollection(){
       else { jo.textContent="满员"; jo.disabled=true; }
       actions.appendChild(ev); actions.appendChild(mz); actions.appendChild(jo);
       card.appendChild(actions);
+    }
+    const cv=card.querySelector(".col-av");
+    if(cv){
+      const g2=cv.getContext("2d");
+      if(owned) drawQ(id,26,30,19,0,form,g2);
+      else { g2.fillStyle="rgba(148,163,184,.18)"; g2.beginPath(); g2.arc(26,28,19,0,6.28); g2.fill();
+        g2.fillStyle="#94a3b8"; g2.font="bold 22px sans-serif"; g2.textAlign="center"; g2.textBaseline="middle"; g2.fillText("?",26,28); }
+    }
+    if(!owned && STARTER3.includes(id)){
+      const ub=document.createElement("button"); ub.className="btn-pick";
+      ub.textContent="100 金币解锁"; ub.disabled = S.coins<100;
+      ub.addEventListener("click",()=>{ if(S.coins>=100){ S.coins-=100; S.roster[id]=1; saveProgress(); renderCollection(); } });
+      card.appendChild(ub);
     }
     grid.appendChild(card);
   }
@@ -3967,6 +4505,40 @@ function renderShop(){
     card.appendChild(b); grid.appendChild(card);
   }
 }
+let attrPickUI=null;
+function openAttrPick(attr, onDone){
+  attrPickUI={ attr, onDone };
+  const T=ATTR_TEXT[attr]||ATTR_TEXT.normal;
+  $("attr-title").textContent="选择 "+T.attr+" 系专属技能";
+  $("attr-sub").textContent="出战该属性角色时装备 "+T.attr+" 系 15 个专属技能 · 切换角色按属性重选 · 技能等级继承";
+  const grid=$("attr-grid"); grid.innerHTML="";
+  for(const s of ATTR_SKILLS.filter(x=>x.attr===attr)){
+    const lab=document.createElement("label"); lab.className="attr-it";
+    lab.innerHTML='<input type="checkbox" class="attr-cb" data-id="'+s.id+'" checked> <b style="color:'+Q_COLOR[s.quality]+'">['+Q_NAME[s.quality]+']</b> '+s.name+' <span class="attr-desc">'+s.desc+'</span>';
+    grid.appendChild(lab);
+  }
+  hide("menu"); hide("collection"); show("attrpick");
+}
+function attrPickConfirm(){
+  if(!attrPickUI) return;
+  const attr=attrPickUI.attr;
+  const sel=[...document.querySelectorAll("#attr-grid input:checked")].map(i=>i.dataset.id);
+  if(!sel.length){ showBanner("至少选择 1 个专属技能"); return; }
+  const pool=ATTR_SKILLS.filter(x=>x.attr===attr).map(x=>x.id);
+  for(const id of pool){                       // 取消选择 → 等级存回 attrLv（切换回来继承）
+    if(!sel.includes(id) && !S.tierIds[id]){
+      (S.attrLv[attr]=S.attrLv[attr]||{})[id]=S.skills[id]||1;
+      delete S.skills[id];
+    }
+  }
+  for(const id of sel){
+    if(S.attrLv[attr] && S.attrLv[attr][id]){ S.skills[id]=S.attrLv[attr][id]; delete S.attrLv[attr][id]; }
+    else S.skills[id]=S.skills[id]||1;
+  }
+  S.attrPick[attr]=sel; saveProgress();
+  const done=attrPickUI.onDone; attrPickUI=null; hide("attrpick");
+  if(done) done();
+}
 function openShop(){ refreshMenuCoins(); shopTab="z"; renderShop(); hide("menu"); show("shop"); }
 function closeShop(){ hide("shop"); show("menu"); refreshMenuCoins(); }
 function quitRun(){   // 暂停退出：结算本局金币回主界面
@@ -3998,12 +4570,20 @@ function newPartner(id){
     id, inv:0, flash:0, angle:rand(0,6.28), dead:false };
 }
 function startGame(){
+  const attr=PK(S.activeRole).attr;
+  if(!S.attrPick[attr]){ hide("menu"); openAttrPick(attr, ()=>{ show("menu"); startGame(); }); return; }   // 未选择该属性专属技能 → 先选
+  confirmStart();
+}
+function confirmStart(){
   ensureAudio();
   const p = newPlayer();
   S.mode="playing"; S.timeScale=1;
-  S.t=0; S.kills=0; S.stage=1; S.stageTimer=CONFIG.level.duration; S.bossActive=false;
+  S.t=0; S.kills=0; S.stage=1; S.stageTimer=CONFIG.level.duration; S.bossActive=false; S.bgStart=Math.floor(Math.random()*9);
   S.runCoins=0; S.playerSlowT=0; S.playerBurn=null; S.lastMult=1;
-  S.skills={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[]; S.bossAoEs=[]; S.shieldSurgeT=0;
+  S.skills={}; S.tierIds={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[]; S.bossAoEs=[]; S.shieldSurgeT=0;
+  const pAttr=PK(S.activeRole).attr;                       // 属性专属技能（切换角色重新选择 · 等级继承）
+  for(const id of (S.attrPick[pAttr]||[])) S.skills[id]=S.skills[id]||1;
+  ensureTierSkills(S.activeRole);
   S.dyna=false; S.dynaT=0; S.dynaCharges=1; S.zCharge=0;
   S.level=1; S.exp=0;
   S.expNeed=CONFIG.exp.base;
@@ -4026,9 +4606,11 @@ function renderPauseSkills(){
   const names=[];
   for(const id in S.skills){
     const lvl=S.skills[id];
-    const s=SKILLS.find(x=>x.id===id); const f=FUSIONS.find(x=>x.id===id);
-    if(f) names.push('<span class="psk fused" title="'+f.name+'：'+f.desc+'">'+f.name+'</span>');
-    else if(s) names.push('<span class="psk" title="'+s.name+'：'+s.desc+'">'+s.name+' Lv.'+lvl+'</span>');
+    const s=SKILLS.find(x=>x.id===id);
+    if(s){
+      const q=qOf(s), qc=Q_COLOR[q];
+      names.push('<span class="psk'+(s.fus?' fused':'')+'" style="border-color:'+qc+';color:'+qc+'" title="['+Q_NAME[q]+'品质] '+s.name+'：'+s.desc+'">'+s.name+' Lv.'+lvl+'</span>');
+    }
   }
   box.innerHTML = names.length? names.join("") : '<span class="psk-empty">尚未学习技能 · 升级时选择</span>';
 }
@@ -4174,15 +4756,18 @@ $("auth-logout").addEventListener("click",()=>{
   logoutUser(); hide("auth"); show("menu"); refreshMenuCoins();
   showBanner("已退出账号 · 游客模式");
 });
+$("btn-catch").addEventListener("click",tryCatch);
+$("btn-catch-run").addEventListener("click",()=>{ if(S.mode!=="catch") return; hide("catch"); showBanner("已放弃捕捉"); finishStage(); });
+$("attr-ok").addEventListener("click",attrPickConfirm);
+$("attr-back").addEventListener("click",()=>{
+  attrPickUI=null; S.pendingRole=null; hide("attrpick"); show("menu"); refreshMenuCoins();
+});
 $("btn-retry").addEventListener("click",startGame);
 $("btn-pause").addEventListener("click",()=>{
   if(S.mode==="playing") pauseGame(); else if(S.mode==="paused") resumeGame();
 });
 $("btn-dyna").addEventListener("click",tryDyna);
 $("btn-skip").addEventListener("click",()=>{ if(S.mode==="playing" && !S.bossActive){ spawnBoss(); showBanner("提前迎战 Boss · 第 "+S.stage+" 关"); } });
-$("ball-1").addEventListener("click",tryCatch);
-$("ball-2").addEventListener("click",tryCatch);
-$("ball-3").addEventListener("click",tryCatch);
 $("portal-black").addEventListener("click",()=>choosePortal("black"));
 $("portal-white").addEventListener("click",()=>choosePortal("white"));
 $("btn-mute").addEventListener("click",()=>{

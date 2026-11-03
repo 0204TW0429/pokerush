@@ -65,6 +65,15 @@
   #menu .menu-coins { margin-top:16px; font-size:15px; color:#fde68a; letter-spacing:2px; }
   #menu .menu-coins b { font-size:18px; color:#fbbf24; }
   #menu .menu-btns { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  #menu .menu-user { font-size:12px; color:#818cf8; letter-spacing:1px; }
+  .p-row { display:flex; gap:12px; justify-content:center; margin-top:14px; }
+  .auth-panel { display:flex; flex-direction:column; align-items:center; gap:10px; padding:26px 30px; }
+  .auth-input { width:240px; padding:10px 12px; font-size:16px; color:#e2e8f0; background:rgba(15,23,42,.7);
+    border:1px solid rgba(148,163,184,.35); border-radius:10px; outline:none; }
+  .auth-input:focus { border-color:#818cf8; }
+  #shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;
+    max-height:56vh; overflow-y:auto; padding:4px; margin-top:12px; }
+  .shop-tabs { display:flex; gap:8px; justify-content:center; margin-top:10px; }
   #menu .menu-btns .btn { margin-top:0; }
   .btn {
     margin-top:26px; min-width:190px; min-height:52px; padding:0 28px; border:none; border-radius:12px;
@@ -243,6 +252,10 @@
         <div class="bar-label"><span>护盾</span><span id="shield-num">0</span></div>
         <div class="bar" id="shield-bar"><i style="transform:scaleX(0)"></i></div>
       </div>
+      <div class="bar-wrap" id="armor-row" hidden>
+        <div class="bar-label"><span>装甲</span><span id="armor-num">0</span></div>
+        <div class="bar" id="armor-bar"><i style="transform:scaleX(0)"></i></div>
+      </div>
       <div id="hp-partners" hidden></div>
     </div>
     <div class="top-right">
@@ -291,10 +304,12 @@
       你只管走位闪避、拾取能量、升级强化，在无尽虫潮中活下来。
     </div>
     <div class="controls">键盘 WASD / 方向键 移动 · P 暂停 · T 提前迎战 Boss<br>手机：左侧拖拽摇杆移动</div>
-    <div class="menu-coins">金币 <b id="menu-coins">0</b></div>
+    <div class="menu-coins">金币 <b id="menu-coins">0</b> · <span class="menu-user" id="menu-user">游客模式 · 未登录</span></div>
     <div class="menu-btns">
       <button class="btn" id="btn-start">开始游戏</button>
+      <button class="btn ghost" id="btn-shop">商店</button>
       <button class="btn ghost" id="btn-collection">我的宝可梦</button>
+      <button class="btn ghost" id="btn-auth">登录 / 注册</button>
     </div>
   </div>
 
@@ -309,6 +324,33 @@
     <button class="btn" id="btn-col-back">返回</button>
   </div>
 
+  <!-- ===== 账号登录 / 注册 ===== -->
+  <div class="overlay" id="auth" hidden>
+    <div class="panel auth-panel">
+      <h2 class="col-title">POKERUSH 账号</h2>
+      <p class="col-sub" id="auth-msg">登录后图鉴、金币与道具保存在本机，下次游玩可继续</p>
+      <input class="auth-input" id="auth-user" placeholder="用户名（2-16 位）" maxlength="16" autocomplete="off">
+      <input class="auth-input" type="password" id="auth-pass" placeholder="密码（至少 4 位）" maxlength="32" autocomplete="off">
+      <div class="p-row">
+        <button class="btn" id="auth-login">登录</button>
+        <button class="btn ghost" id="auth-reg">注册新账号</button>
+      </div>
+      <div class="p-row">
+        <button class="btn ghost" id="auth-logout" hidden>退出当前账号</button>
+        <button class="btn ghost" id="auth-back">返回</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 商店：Z 招式 / Mega 石 / 极巨化 ===== -->
+  <div class="overlay" id="shop" hidden>
+    <div class="col-title">商店</div>
+    <div class="col-sub">金币 <b id="shop-coins">0</b> · Z 招式 / Mega 石 / 极巨化（均按宝可梦原著设定）</div>
+    <div class="shop-tabs" id="shop-tabs"></div>
+    <div id="shop-grid"></div>
+    <button class="btn" id="btn-shop-back">返回</button>
+  </div>
+
   <!-- ===== 升级三选一 ===== -->
   <div class="overlay" id="levelup" hidden>
     <div class="up-title">升级完成</div>
@@ -321,7 +363,10 @@
     <div class="p-title">已暂停</div>
     <div class="p-tip">按 P 或点击按钮继续 · 悬停技能可查看说明</div>
     <div class="p-skills" id="p-skills"></div>
-    <button class="btn" id="btn-resume">继续</button>
+    <div class="p-row">
+      <button class="btn" id="btn-resume">继续</button>
+      <button class="btn ghost" id="btn-quit">退出本局</button>
+    </div>
   </div>
 
   <!-- ===== 结束 ===== -->
@@ -1499,6 +1544,10 @@ function roleMega(id){ return S.mega[id]?1:0; }
 function canMega(id){ return !!MEGA_SET[id]; }
 function zMoveName(){ return Z_MOVE_BY_ATTR[PK(S.activeRole).attr]||"究极冲击"; }
 function castZMove(){
+  if(!S.zUnlocked || S.zCharge<100 || S.mode!=="playing") return;
+  const za = S.zOwned[PK(S.activeRole).attr];
+  if(Object.keys(S.zOwned).length && !za){ showBanner("未拥有 "+((ATTR_TEXT[PK(S.activeRole).attr]||{}).attr||"该")+" 系 Z 招式 · 请到商店购买"); return; }
+
   const attr=PK(S.activeRole).attr, lvl=3+roleForm(S.activeRole)+roleMega(S.activeRole);
   const nm=zMoveName();
   showBanner("Z 招式 · "+nm);
@@ -1561,6 +1610,7 @@ const S = {
   zUnlocked:false, zCharge:0,   // Z 手环 + 能量条 0-100
   stats:{ kills:0 },
   best: null,
+  zOwned:{}, bossAoEs:[], shieldSurgeT:0,   // Z 招式拥有集 · Boss 范围技 · 临时护盾
   mute:false,
   audio:null,             // 桌面端 Web Audio
   joy:{ active:false, baseX:0, baseY:0, dx:0, dy:0 },
@@ -1568,37 +1618,70 @@ const S = {
   colGen:"1"             // 图鉴世代筛选
 };
 // 加载进度（捕捉/金币持久化）
-(function loadProgress(){
-  try{
-    const rr = JSON.parse(localStorage.getItem("starburst_roster")||"null");
-    if(rr && typeof rr==="object") S.roster = rr;
-  }catch(e){}
-  if(!S.roster.pichu) S.roster.pichu = 2;   // 初始伙伴：皮卡丘（皮丘 Lv.2）
-  try{ S.coins = parseInt(localStorage.getItem("starburst_coins")||"0",10)||0; }catch(e){}
-  try{
-    const sh = JSON.parse(localStorage.getItem("starburst_shiny")||"null");
-    if(sh && typeof sh==="object") S.shiny = sh;
-  }catch(e){}
-  try{
-    const mg = JSON.parse(localStorage.getItem("starburst_mega")||"null");
-    if(mg && typeof mg==="object") S.mega = mg;
-  }catch(e){}
-  try{ S.dynaUnlocked = localStorage.getItem("starburst_dyna")==="1"; }catch(e){}
-  try{ S.zUnlocked = localStorage.getItem("starburst_z")==="1"; }catch(e){}
-  try{ S.partySlots = parseInt(localStorage.getItem("starburst_slots")||"1",10)||1; }catch(e){}
-  if(S.partySlots<1) S.partySlots=1; if(S.partySlots>3) S.partySlots=3;
-  try{
-    const pa = JSON.parse(localStorage.getItem("starburst_party")||"null");
-    if(Array.isArray(pa)) S.party = pa.filter(id=>POKEDEX[id]);
-  }catch(e){}
-})();
+/* ===== 多账户系统：登录后各自保存，本机 localStorage 持久化 ===== */
+const ACCT_KEY="pokerush_accounts", SESS_KEY="pokerush_session";
+function hashPw(pw,salt){ let h=5381; const s=salt+pw; for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } return "h"+h.toString(36); }
+function getAccounts(){ try{ return JSON.parse(localStorage.getItem(ACCT_KEY)||"{}")||{}; }catch(e){ return {}; } }
+function currentUser(){ try{ return localStorage.getItem(SESS_KEY)||"guest"; }catch(e){ return "guest"; } }
+function setUser(u){ try{ if(u) localStorage.setItem(SESS_KEY,u); else localStorage.removeItem(SESS_KEY); }catch(e){} }
+function registerUser(name,pw){
+  name=(name||"").trim();
+  if(name.length<2||name.length>16) return "用户名需 2-16 位";
+  if(!pw||pw.length<4) return "密码至少 4 位";
+  const ac=getAccounts();
+  if(ac[name]) return "用户名已存在";
+  const salt=Math.random().toString(36).slice(2,8);
+  ac[name]={salt,hash:hashPw(pw,salt)};
+  try{ localStorage.setItem(ACCT_KEY,JSON.stringify(ac)); }catch(e){ return "保存失败"; }
+  setUser(name); return "";
+}
+function loginUser(name,pw){
+  name=(name||"").trim();
+  const ac=getAccounts();
+  const u=ac[name];
+  if(!u||u.hash!==hashPw(pw||"",u.salt)) return "用户名或密码错误";
+  setUser(name); return "";
+}
+function logoutUser(){ saveProgress(); setUser(null); loadProgress(); }
+// 加载进度（按当前账号读取；游客首次从旧版键迁移）
+function loadProgress(){
+  const u=currentUser();
+  let d=null;
+  try{ d=JSON.parse(localStorage.getItem("pokerush_save_"+u)||"null"); }catch(e){ d=null; }
+  if(!d && u==="guest"){
+    d={};
+    try{ const rr=JSON.parse(localStorage.getItem("starburst_roster")||"null"); if(rr&&typeof rr==="object") d.roster=rr; }catch(e){}
+    try{ const c=parseInt(localStorage.getItem("starburst_coins")||"0",10)||0; if(c) d.coins=c; }catch(e){}
+    try{ const sh=JSON.parse(localStorage.getItem("starburst_shiny")||"null"); if(sh&&typeof sh==="object") d.shiny=sh; }catch(e){}
+    try{ const sl=parseInt(localStorage.getItem("starburst_slots")||"1",10)||1; if(sl>1) d.slots=sl; }catch(e){}
+    try{ const pa=JSON.parse(localStorage.getItem("starburst_party")||"null"); if(Array.isArray(pa)) d.party=pa; }catch(e){}
+    try{ const mg=JSON.parse(localStorage.getItem("starburst_mega")||"null"); if(mg&&typeof mg==="object") d.mega=mg; }catch(e){}
+    try{ if(localStorage.getItem("starburst_dyna")==="1") d.dyna=true; }catch(e){}
+    try{ if(localStorage.getItem("starburst_z")==="1") d.z=true; }catch(e){}
+    try{ const b=JSON.parse(localStorage.getItem("starburst_best")||"null"); if(b) d.best=b; }catch(e){}
+    try{ if(localStorage.getItem("starburst_mute")==="1") d.mute=true; }catch(e){}
+  }
+  d = d||{};
+  if(d.roster && typeof d.roster==="object") S.roster=d.roster;
+  if(!S.roster.pichu) S.roster.pichu = 2;                       // 初始伙伴：皮卡丘
+  S.coins = d.coins||0;
+  if(d.shiny && typeof d.shiny==="object") S.shiny=d.shiny;
+  S.partySlots = d.slots?clamp(+d.slots,1,3):1;
+  if(Array.isArray(d.party)) S.party=d.party.filter(id=>POKEDEX[id]);
+  if(d.mega && typeof d.mega==="object") S.mega=d.mega;
+  S.dynaUnlocked = !!d.dyna;
+  S.zUnlocked = !!d.z;
+  if(d.zOwned && typeof d.zOwned==="object") S.zOwned=d.zOwned;
+  if(d.best) S.best=d.best;
+  S.mute = !!d.mute;
+  if(S.zUnlocked && !Object.keys(S.zOwned).length){ S.zOwned[PK(S.activeRole).attr]=true; }  // 老手环：默认本命属性
+}
+loadProgress();
 function saveProgress(){
   try{
-    localStorage.setItem("starburst_roster", JSON.stringify(S.roster));
-    localStorage.setItem("starburst_coins", String(S.coins));
-    localStorage.setItem("starburst_shiny", JSON.stringify(S.shiny));
-    localStorage.setItem("starburst_slots", String(S.partySlots));
-    localStorage.setItem("starburst_party", JSON.stringify(S.party));
+    const data={ roster:S.roster, coins:S.coins, shiny:S.shiny, slots:S.partySlots, party:S.party,
+      mega:S.mega, dyna:S.dynaUnlocked, z:S.zUnlocked, zOwned:S.zOwned, best:S.best, mute:S.mute };
+    localStorage.setItem("pokerush_save_"+currentUser(), JSON.stringify(data));
   }catch(e){}
 }
 function PK(id){ return POKEDEX[id]||POKEDEX.pichu; }
@@ -1638,7 +1721,7 @@ function buildStars(){
 function newPlayer(){
   return { x:W/2, y:H/2, r:CONFIG.player.radius, hp:CONFIG.player.hp, maxHp:CONFIG.player.hp,
     angle:-Math.PI/2, inv:0, flash:0, droneLvl:0, multiLvl:0, fireLvl:0, dmgLvl:0, pierceLvl:0,
-    shieldLvl:1, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1 };
+    shieldLvl:1, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1, armor:1 };
 }
 function syncDrones(){
   const n = S.player.droneCount;
@@ -1683,6 +1766,16 @@ function spawnElite(){
     r:c.r*1.7, hp:c.hp*4*scale, maxHp:c.hp*4*scale, speed:c.speed*1.15, dmg:c.dmg*1.5,
     exp:c.exp*5, angle:a, wob:0, elite:true, dead:false });
 }
+const BOSS_SKILLS={ ring:{name:"环形弹幕"}, seeker:{name:"追踪弹"}, fan:{name:"扇形散射"},
+  charge:{name:"蓄力冲撞"}, summon:{name:"召唤小怪"}, aoe:{name:"震地波"}, nova:{name:"星域湮灭"} };
+function rollBossSkills(ult,mega){   // 普通 1 个 · 大 Boss 2 个 · 终极 3 个，随机不重复
+  const n = ult?3 : mega?2 : 1;
+  const pool=["ring","seeker","fan","charge","summon","aoe"];
+  if(ult) pool.push("nova");
+  const out=[];
+  while(out.length<n && pool.length){ const i=Math.floor(Math.random()*pool.length); out.push(pool[i]); pool.splice(i,1); }
+  return out;
+}
 function spawnBoss(){
   S.bossActive = true;
   S.enemies.length = 0;                                              // 清场，专注 Boss
@@ -1698,7 +1791,8 @@ function spawnBoss(){
   const m = ult ? CONFIG.level.ultMult : mega ? CONFIG.level.megaMult : 1;
   S.enemies.push({ type:"boss", attr:bid, name, mega, ult, x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d,
     r: ult?74: mega?58:40, hp:base*m, maxHp:base*m, speed: ult?44: mega?40:32, dmg: ult?60: mega?50:35, exp:0,
-    angle:a, wob:0, elite:false, dead:false });
+    angle:a, wob:0, elite:false, dead:false,
+    bskills: rollBossSkills(ult,mega), bskillCd: rand(2,4), bskillT:0, chargeT:0 });
   const tag = ult ? ("终极 Boss · "+name) : mega ? ("大 Boss · "+name) : ("BOSS 来袭 · "+name);
   showBanner(tag);
   sndExplode(true);
@@ -1747,10 +1841,11 @@ function rollUltLoot(){                                      // 终极 Boss 1% �
   if(!opts.length || Math.random()>=0.01) return;
   const pick=opts[Math.floor(Math.random()*opts.length)];
   if(pick==="mega"){ const id=canMega[Math.floor(Math.random()*canMega.length)];
-    S.mega[id]=true; localStorage.setItem("starburst_mega",JSON.stringify(S.mega));
+    S.mega[id]=true;
     showBanner("终极掉落：Mega 石（"+PK(id).name+"）！"); }
-  else if(pick==="dyna"){ S.dynaUnlocked=true; localStorage.setItem("starburst_dyna","1"); showBanner("终极掉落：极巨手环！"); }
-  else { S.zUnlocked=true; localStorage.setItem("starburst_z","1"); showBanner("终极掉落：Z 手环！"); }
+  else if(pick==="dyna"){ S.dynaUnlocked=true; showBanner("终极掉落：极巨手环！"); }
+  else { S.zUnlocked=true; S.zOwned[PK(S.activeRole).attr]=true; showBanner("终极掉落：Z 手环（"+Z_MOVE_BY_ATTR[PK(S.activeRole).attr]+"）！"); }
+  saveProgress();
   sndLevel();
 }
 function finishStage(){
@@ -1758,10 +1853,10 @@ function finishStage(){
   S.bossActive = false;
   S.stage++;
   S.stageTimer = CONFIG.level.duration;
-  S.enemies.length = 0; S.bullets.length = 0; S.puddles.length = 0; S.ebullets.length = 0;
+  S.enemies.length = 0; S.bullets.length = 0; S.puddles.length = 0; S.ebullets.length = 0; S.bossAoEs.length = 0;
   const p = S.player;
-  p.hp = p.maxHp; p.shieldLvl = Math.max(p.shieldLvl,1);
-  refreshHpUI(); syncShieldUI();
+  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 · 装甲每关 +1（最多 3 层）
+  refreshHpUI(); syncShieldUI(); syncArmorUI();
   S.dyna = false; S.dynaT = 0; S.dynaCharges = 1;               // 每关 1 次极巨化
   updatePowerUI();
   const reward = (10 + S.stage*5) * S.lastMult;                      // 二级神 ×3 / 一级神 ×5
@@ -1982,6 +2077,31 @@ function update(dt){
         e.x+=Math.cos(ha)*pull*dt; e.y+=Math.sin(ha)*pull*dt;
       }
     }
+    // Boss 专属技能（小 Boss 1 个 / 大 Boss 2 个 / 终极 Boss 3 个，进入射程后按冷却释放）
+    if(e.type==="boss" && Math.hypot(p.x-e.x,p.y-e.y)<560){
+      e.bskillCd-=dt;
+      if(e.bskillT>0) e.bskillT-=dt;
+      else if(e.bskillCd<=0 && e.bskills && e.bskills.length){
+        e.bskillCd = Math.max(3.5, 8-(e.ult?3:e.mega?2:1)*1.2) * rand(0.9,1.15);
+        const sk = e.bskills[Math.floor(Math.random()*e.bskills.length)];
+        const spd = 400 + (S.stage-1)*8;
+        if(sk==="ring"){ for(let k=0;k<12;k++){ const aa=k/12*6.28;
+          S.ebullets.push({x:e.x,y:e.y,vx:Math.cos(aa)*spd,vy:Math.sin(aa)*spd,r:6,life:1.8,dmg:16,bossSkill:true}); }
+          burst(e.x,e.y,"#f87171",20,220); }
+        else if(sk==="fan"){ const base=Math.atan2(p.y-e.y,p.x-e.x);
+          for(let k=-2;k<=2;k++){ const aa=base+k*0.28;
+            S.ebullets.push({x:e.x,y:e.y,vx:Math.cos(aa)*spd,vy:Math.sin(aa)*spd,r:6,life:1.8,dmg:15,bossSkill:true}); } }
+        else if(sk==="seeker"){ for(let k=0;k<3;k++)
+          S.ebullets.push({x:e.x,y:e.y,vx:Math.cos(rand(0,6.28))*spd,vy:Math.sin(rand(0,6.28))*spd,r:5,life:3,dmg:14,bossSkill:true,homing:true}); }
+        else if(sk==="summon"){ for(let k=0;k<3;k++) S.enemies.push({type:"swarmer",x:e.x+rand(-40,40),y:e.y+rand(-40,40),
+          r:9,hp:12,maxHp:12,speed:160,dmg:10,exp:6,angle:rand(0,6.28),wob:0,elite:false,dead:false}); }
+        else if(sk==="charge"){ e.chargeT=0.85; burst(e.x,e.y,"#fbbf24",16,220); }
+        else if(sk==="aoe"){ S.bossAoEs.push({x:e.x,y:e.y,r:150,warn:0.7,t:0.7,dmg:22,bossSkill:true}); }
+        else if(sk==="nova"){ S.bossAoEs.push({x:e.x,y:e.y,r:260,warn:1.0,t:1.0,dmg:30,bossSkill:true}); burst(e.x,e.y,"#a78bfa",30,300); }
+        sndExplode(false);
+      }
+      if(e.chargeT>0){ e.chargeT-=dt; e.x+=Math.cos(a)*e.speed*4.5*dt; e.y+=Math.sin(a)*e.speed*4.5*dt; }
+    }
     // 特殊怪行为
     if(e.sp){
       e.cd-=dt;
@@ -1990,7 +2110,7 @@ function update(dt){
         e.dead=true;                                                    // 自爆
         burst(e.x,e.y,"#f97316",30,260);
         for(const o of S.enemies){ if(!o.dead && o!==e && dist(e,o)<100){ o.hp-=40; if(o.hp<=0) killEnemy(o); } }
-        if(pdl<100+p.r){ if(p.inv<=0){ p.hp-=26; p.inv=0.6; p.flash=0.25; refreshHpUI(); if(p.hp<=0){ gameOver(); return; } } }
+        if(pdl<100+p.r){ playerDamage(26,false); if(S.mode!=="playing") return; }
         continue;
       }
       if(e.sp==="vomit" && e.cd<=0){                                    // 呕吐留毒池
@@ -2024,12 +2144,8 @@ function update(dt){
     if(d < e.r+p.r){
       if(p.inv<=0){
         let dmg = e.dmg*(PK(S.activeRole).attr==="steel"?0.8:1)*(S.dyna?0.5:1);
-        if(p.shieldLvl>0){ p.shieldLvl--; p.inv=0.8; syncShieldUI(); burst(p.x,p.y,"#38bdf8",14,200); sndHit(true); }
-        else{
-          p.hp-=dmg; p.inv=0.5; p.flash=0.25; S.dmgFlash=0.3; sndHit(false);
-          refreshHpUI();
-          if(p.hp<=0){ gameOver(); return; }
-        }
+        playerDamage(dmg, e.type==="boss");
+        if(S.mode!=="playing") return;
       }
       // Boss 撞击附加 debuff
       if(e.type==="boss"){
@@ -2096,14 +2212,26 @@ function update(dt){
   // 敌方激光弹
   for(let i=S.ebullets.length-1;i>=0;i--){
     const eb=S.ebullets[i];
+    if(eb.homing){ const a2=Math.atan2(p.y-eb.y,p.x-eb.x); const sp=Math.hypot(eb.vx,eb.vy);
+      eb.vx=Math.cos(a2)*sp; eb.vy=Math.sin(a2)*sp; }
     eb.x+=eb.vx*dt; eb.y+=eb.vy*dt; eb.life-=dt;
     if(eb.life<=0||eb.x<-20||eb.x>W+20||eb.y<-20||eb.y>H+20){ S.ebullets.splice(i,1); continue; }
     if(dist(p,eb)<p.r+eb.r){
       if(p.inv<=0){
-        if(p.shieldLvl>0){ p.shieldLvl--; p.inv=0.8; syncShieldUI(); burst(p.x,p.y,"#38bdf8",14,200); sndHit(true); }
-        else{ p.hp-=eb.dmg||18; p.inv=0.5; p.flash=0.25; S.dmgFlash=0.3; sndHit(false); refreshHpUI(); if(p.hp<=0){ gameOver(); return; } }
+        playerDamage(eb.dmg||18, eb.bossSkill||false);
+        if(S.mode!=="playing") return;
       }
       S.ebullets.splice(i,1);
+    }
+  }
+  // Boss 范围技（震地波 / 星域湮灭）：警告 → 爆炸（Boss 技能级伤害 → 装甲可挡）
+  for(let i=S.bossAoEs.length-1;i>=0;i--){
+    const ao=S.bossAoEs[i];
+    ao.t-=dt; ao.warn-=dt;
+    if(ao.t<=0){
+      if(dist(p,ao)<ao.r+p.r && p.inv<=0){ playerDamage(ao.dmg, true); if(S.mode!=="playing") return; }
+      burst(ao.x,ao.y,"#f87171",24,240);
+      S.bossAoEs.splice(i,1);
     }
   }
 
@@ -2142,6 +2270,18 @@ function nearestEnemy(x,y){
     if(d<bd){bd=d;best=e;}
   }
   return best;
+}
+function playerDamage(dmg,bossSkill){
+  const p=S.player;
+  if(S.shieldSurgeT>0 || p.inv>0) return;                     // 临时护盾（护盾涌能）期间免疫
+  if((bossSkill||dmg>=25) && p.armor>0){                      // 装甲：抵挡大额伤害或 Boss 技能
+    p.armor--; p.inv=0.8; syncArmorUI(); burst(p.x,p.y,"#fbbf24",18,240); sndHit(true); return;
+  }
+  if(p.shieldLvl>0){                                          // 护盾：抵挡一切伤害（消耗 1 层）
+    p.shieldLvl--; p.inv=0.8; syncShieldUI(); burst(p.x,p.y,"#38bdf8",14,200); sndHit(true); return;
+  }
+  p.hp-=dmg; p.inv=0.5; p.flash=0.25; S.dmgFlash=0.3; sndHit(false); refreshHpUI();
+  if(p.hp<=0){ gameOver(); }
 }
 function killEnemy(e){
   e.dead=true; S.kills++;
@@ -2297,6 +2437,8 @@ const SKILLS=[
   { id:"overclock",  name:"超频模式", max:3, rarity:2, fn:"overclock",  desc:"每 11 秒进入 3 秒射速 x1.8" },
   { id:"rage",       name:"嗜血狂暴", max:3, rarity:1, fx:"rage",       desc:"击杀后 1.2 秒移速射速 +30%" },
   { id:"nova_shield",name:"充能护盾", max:3, rarity:2, fn:"nova_shield",desc:"每 22 秒自动补充 1 层护盾" },
+  { id:"bulwark",      name:"铁壁装甲", max:3, rarity:2, fn:"bulwark",      desc:"每 14 秒自动补充 1 层装甲（挡大额伤害/Boss 技能）" },
+  { id:"shield_surge", name:"护盾涌能", max:3, rarity:2, fn:"shield_surge",desc:"每 18 秒开启 2.5 秒临时护盾，期间免疫一切伤害" },
   { id:"timebubble", name:"时间气泡", max:3, rarity:2, fx:"timebubble", desc:"击杀使全场敌人减速 0.6 秒" },
   { id:"orbital",    name:"轨道激光", max:3, rarity:2, fn:"orbital",    desc:"每 9.5 秒发射一道贯穿激光" },
   { id:"siphon",     name:"奥术虹吸", max:3, rarity:2, fx:"lifesteal",  desc:"子弹命中回复 0.5 点装甲（每级）" },
@@ -2700,12 +2842,15 @@ function tickSkills(dt){
     if(id==="overclock" && cd.overclock<=0){ cd.overclock=Math.max(2,11-lvl); S.buff.oc=3; }
     if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
     if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); } }
+    if(id==="bulwark" && cd.bulwark<=0){ cd.bulwark=Math.max(6,14-lvl*3); if(p.armor<3){ p.armor++; syncArmorUI(); burst(p.x,p.y,"#fbbf24",12,160); } }
+    if(id==="shield_surge" && cd.shield_surge<=0){ cd.shield_surge=Math.max(8,18-lvl*4); S.shieldSurgeT=2.5; }
     const fn=SKILL_FN[id];
     if(fn && cd[id]<=0) fn(lvl);
   }
   if(S.buff.oc>0) S.buff.oc-=dt;
   if(S.buff.rage>0) S.buff.rage-=dt;
   if(S.dyna){ S.dynaT-=dt; if(S.dynaT<=0) S.dyna=false; }
+  if(S.shieldSurgeT>0){ S.shieldSurgeT-=dt; }
   if(S.buff.z>0){ S.buff.z-=dt; if(S.buff.z<=0) S.buff.z=0; }
 }
 const ICONS={
@@ -2756,6 +2901,13 @@ function syncShieldUI(){
   $("shield-row").hidden = p.shieldLvl<=0;
   $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/3,0,1)+")";
   $("shield-num").textContent=p.shieldLvl;
+}
+function syncArmorUI(){
+  const p=S.player;
+  const ar=$("armor-row"); if(!ar) return;
+  ar.hidden = (p.armor||0)<=0;
+  $("armor-bar").firstElementChild.style.transform="scaleX("+clamp((p.armor||0)/3,0,1)+")";
+  $("armor-num").textContent=p.armor||0;
 }
 function refreshExpUI(){
   $("exp-bar").firstElementChild.style.transform="scaleX("+clamp(S.exp/S.expNeed,0,1)+")";
@@ -3144,6 +3296,16 @@ function drawPlayer(){
     CTX.strokeStyle="rgba(56,189,248,0.55)"; CTX.lineWidth=2;
     CTX.beginPath(); CTX.arc(p.x,p.y,rr+8,0,6.28); CTX.stroke();
   }
+  // 装甲层：金色盾牌角标（最多 3 层）
+  if(p.armor>0){
+    CTX.fillStyle="rgba(251,191,36,0.95)";
+    for(let k=0;k<Math.min(3,p.armor);k++){
+      const aa=-Math.PI/2 + (k-(p.armor-1)/2)*0.5;
+      const ax=p.x+Math.cos(aa)*(rr+14), ay=p.y+Math.sin(aa)*(rr+14);
+      CTX.beginPath();
+      CTX.moveTo(ax,ay-6); CTX.lineTo(ax+5,ay+4); CTX.lineTo(ax-5,ay+4); CTX.closePath(); CTX.fill();
+    }
+  }
   // 闪光光环
   if(S.shiny[id]){
     CTX.strokeStyle="rgba(250,204,21,0.9)"; CTX.lineWidth=2;
@@ -3517,6 +3679,20 @@ function drawEnemies(){
     }
   }
 }
+function drawBossAoEs(){
+  for(const ao of S.bossAoEs){
+    const warn = Math.max(0, ao.warn);
+    CTX.fillStyle = "rgba(248,113,113,"+(0.10+0.14*Math.sin(S.t*10))+")";
+    CTX.beginPath(); CTX.arc(ao.x,ao.y,ao.r,0,6.28); CTX.fill();
+    CTX.strokeStyle = warn>0 ? "rgba(248,113,113,0.85)" : "rgba(248,113,113,0.35)";
+    CTX.lineWidth = warn>0?3:1.5;
+    CTX.beginPath(); CTX.arc(ao.x,ao.y,ao.r*(warn>0?1:(ao.t/0.35)),0,6.28); CTX.stroke();
+    if(warn>0){
+      CTX.strokeStyle="rgba(254,215,170,0.8)"; CTX.lineWidth=1.5;
+      CTX.beginPath(); CTX.arc(ao.x,ao.y,ao.r*0.55,0,6.28); CTX.stroke();
+    }
+  }
+}
 function drawPuddles(){
   for(const pd of S.puddles){
     const a=0.55+0.2*Math.sin(pd.t*6);
@@ -3623,7 +3799,7 @@ function showBanner(txt){
   bannerTO=setTimeout(()=>{ $("banner").hidden=true; },2200);
 }
 /* ===== 宝可梦图鉴面板 ===== */
-function refreshMenuCoins(){ $("menu-coins").textContent=S.coins; }
+function refreshMenuCoins(){ $("menu-coins").textContent=S.coins; const mu=$("menu-user"); if(mu){ const u=currentUser(); mu.textContent = u==="guest" ? "游客模式 · 未登录" : "账号："+u; } }
 const SLOT_COST = [0, 10000, 40000];   // 队伍格 2/3 永久解锁价（巨额金币）
 function renderPartyBar(){
   const bar=$("party-bar"); bar.innerHTML="";
@@ -3737,6 +3913,72 @@ function renderCollection(){
     grid.appendChild(card);
   }
 }
+let shopTab="z";
+function renderShop(){
+  const sc=$("shop-coins"); if(sc) sc.textContent=S.coins;
+  const tabs=$("shop-tabs"); tabs.innerHTML="";
+  for(const [k,lbl] of [["z","Z 招式"],["mega","Mega 石"],["dyna","极巨化"]]){
+    const tb=document.createElement("button"); tb.className="col-tab"+(shopTab===k?" on":"");
+    tb.textContent=lbl;
+    tb.addEventListener("click",()=>{ shopTab=k; renderShop(); });
+    tabs.appendChild(tb);
+  }
+  const grid=$("shop-grid"); grid.innerHTML="";
+  if(shopTab==="z"){
+    for(const attr of ATTR_KEYS){
+      const T=ATTR_TEXT[attr]; const owned=!!S.zOwned[attr];
+      const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
+      card.innerHTML='<div class="col-dot" style="background:'+T.color+'">'+T.attr+'</div>'+
+        '<div class="col-name">'+Z_MOVE_BY_ATTR[attr]+'</div>'+
+        '<div class="col-attr">'+T.attr+'属性 Z 招式</div>'+
+        '<div class="col-skill">战斗能量满 100 按 Z 施放（出战精灵属性对应，原著 Z 招式）</div>';
+      const b=document.createElement("button"); b.className="btn-pick";
+      if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
+      else{ b.textContent="购买 "+Z_COST; b.disabled=S.coins<Z_COST;
+        b.addEventListener("click",()=>{ if(S.coins>=Z_COST){ S.coins-=Z_COST; S.zOwned[attr]=true; S.zUnlocked=true; saveProgress(); renderShop(); } }); }
+      card.appendChild(b); grid.appendChild(card);
+    }
+  } else if(shopTab==="mega"){
+    for(const id of Object.keys(MEGA_SET)){
+      const R=PK(id); const T=ATTR_TEXT[R.attr];
+      const owned=!!S.mega[id];
+      const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
+      card.innerHTML='<div class="col-dot" style="background:'+T.color+'">'+T.attr+'</div>'+
+        '<div class="col-name">'+R.name+' · Mega</div>'+
+        '<div class="col-attr">G'+R.gen+' · '+T.attr+'属性</div>'+
+        '<div class="col-skill">出战该精灵大幅强化（原著可 Mega 名单 '+Object.keys(MEGA_SET).length+' 只）</div>';
+      const b=document.createElement("button"); b.className="btn-pick";
+      if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
+      else{ b.textContent="购买 "+MEGA_COST; b.disabled=S.coins<MEGA_COST;
+        b.addEventListener("click",()=>{ if(S.coins>=MEGA_COST){ S.coins-=MEGA_COST; S.mega[id]=true; saveProgress(); renderShop(); } }); }
+      card.appendChild(b); grid.appendChild(card);
+    }
+  } else {
+    const owned=S.dynaUnlocked;
+    const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
+    card.innerHTML='<div class="col-dot" style="background:#a78bfa">极</div>'+
+      '<div class="col-name">极巨化手环</div>'+
+      '<div class="col-attr">全宝可梦通用</div>'+
+      '<div class="col-skill">战斗中按 G 极巨化：体型变大、受击减半、属性招式强化（每关 1 次）</div>';
+    const b=document.createElement("button"); b.className="btn-pick";
+    if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
+    else{ b.textContent="购买 "+DYNA_COST; b.disabled=S.coins<DYNA_COST;
+      b.addEventListener("click",()=>{ if(S.coins>=DYNA_COST){ S.coins-=DYNA_COST; S.dynaUnlocked=true; saveProgress(); renderShop(); } }); }
+    card.appendChild(b); grid.appendChild(card);
+  }
+}
+function openShop(){ refreshMenuCoins(); shopTab="z"; renderShop(); hide("menu"); show("shop"); }
+function closeShop(){ hide("shop"); show("menu"); refreshMenuCoins(); }
+function quitRun(){   // 暂停退出：结算本局金币回主界面
+  if(S.mode!=="paused") return;
+  const gained=S.runCoins||0;
+  S.coins+=gained; S.runCoins=0;
+  saveProgress();
+  S.mode="menu"; S.timeScale=0;
+  hide("pause"); hide("hud"); hide("topbtns");
+  show("menu"); refreshMenuCoins();
+  showBanner("已退出本局 · 金币 +"+gained+" 已结算");
+}
 function openCollection(){
   refreshMenuCoins();
   S.colGen = S.colGen||"1";
@@ -3761,12 +4003,13 @@ function startGame(){
   S.mode="playing"; S.timeScale=1;
   S.t=0; S.kills=0; S.stage=1; S.stageTimer=CONFIG.level.duration; S.bossActive=false;
   S.runCoins=0; S.playerSlowT=0; S.playerBurn=null; S.lastMult=1;
-  S.skills={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[];
+  S.skills={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[]; S.bossAoEs=[]; S.shieldSurgeT=0;
   S.dyna=false; S.dynaT=0; S.dynaCharges=1; S.zCharge=0;
   S.level=1; S.exp=0;
   S.expNeed=CONFIG.exp.base;
   S.spawnTimer=0.8; S.eliteTimer=CONFIG.spawn.eliteEvery; S.dmgFlash=0;
   S.player=p; S.drones=[]; S.bullets=[]; S.enemies=[]; S.pickups=[]; S.particles=[];
+  p.armor=1;
   // 出战队伍：第 1 格 = 主角色；其余格 = 队伍伙伴（独立血量）
   S.party = [S.activeRole, ...S.party.filter(x=>x!==S.activeRole && POKEDEX[x])].slice(0, S.partySlots);
   S.partners = S.party.slice(1).map(id=>newPartner(id));
@@ -3807,8 +4050,8 @@ function gameOver(){
   let best=null;
   try{ best=JSON.parse(localStorage.getItem("starburst_best")||"null"); }catch(e){}
   const isBest=!best || rec.time>best.time;
-  if(isBest){ try{ localStorage.setItem("starburst_best",JSON.stringify(rec)); }catch(e){} }
-  S.best=isBest?rec:best;
+  if(isBest){ try{ localStorage.setItem("starburst_best",JSON.stringify(rec)); }catch(e){} S.best=rec; saveProgress(); }
+  else S.best=best;
   $("go-time").textContent=fmtTime(rec.time);
   $("go-kills").textContent=rec.kills;
   $("go-level").textContent=S.level;
@@ -3885,7 +4128,7 @@ function loop(ts){
   // 渲染（levelup/pause 时场景静止，背景仍刷新）
   drawBackground(S.player?S.player.x:0,S.player?S.player.y:0);
   if(S.player){
-    drawPuddles(); drawPickups(); drawHoles(); drawEbullets(); drawEnemies(); drawBullets(); drawDrones(); drawPlayer(); drawPartners(); drawParticles();
+    drawPuddles(); drawBossAoEs(); drawPickups(); drawHoles(); drawEbullets(); drawEnemies(); drawBullets(); drawDrones(); drawPlayer(); drawPartners(); drawParticles();
   }
   if(S.mode==="playing"){
     refreshTopUI();
@@ -3904,6 +4147,33 @@ $("btn-start").addEventListener("click",startGame);
 $("btn-collection").addEventListener("click",openCollection);
 $("btn-col-back").addEventListener("click",closeCollection);
 $("btn-resume").addEventListener("click",resumeGame);
+$("btn-quit").addEventListener("click",quitRun);
+$("btn-shop").addEventListener("click",openShop);
+$("btn-shop-back").addEventListener("click",closeShop);
+$("btn-auth").addEventListener("click",()=>{
+  const u=currentUser();
+  $("auth-msg").textContent = u==="guest" ? "登录后图鉴、金币与道具保存在本机，下次游玩可继续" : "当前账号："+u;
+  $("auth-user").value=""; $("auth-pass").value="";
+  $("auth-logout").hidden = (u==="guest");
+  hide("menu"); show("auth");
+});
+$("auth-back").addEventListener("click",()=>{ hide("auth"); show("menu"); refreshMenuCoins(); });
+$("auth-login").addEventListener("click",()=>{
+  const e=loginUser($("auth-user").value,$("auth-pass").value);
+  if(e){ $("auth-msg").textContent=e; return; }
+  loadProgress(); hide("auth"); show("menu"); refreshMenuCoins();
+  showBanner("已登录："+currentUser());
+});
+$("auth-reg").addEventListener("click",()=>{
+  const e=registerUser($("auth-user").value,$("auth-pass").value);
+  if(e){ $("auth-msg").textContent=e; return; }
+  loadProgress(); hide("auth"); show("menu"); refreshMenuCoins();
+  showBanner("注册成功："+currentUser());
+});
+$("auth-logout").addEventListener("click",()=>{
+  logoutUser(); hide("auth"); show("menu"); refreshMenuCoins();
+  showBanner("已退出账号 · 游客模式");
+});
 $("btn-retry").addEventListener("click",startGame);
 $("btn-pause").addEventListener("click",()=>{
   if(S.mode==="playing") pauseGame(); else if(S.mode==="paused") resumeGame();
@@ -3917,10 +4187,10 @@ $("portal-black").addEventListener("click",()=>choosePortal("black"));
 $("portal-white").addEventListener("click",()=>choosePortal("white"));
 $("btn-mute").addEventListener("click",()=>{
   S.mute=!S.mute;
-  try{ localStorage.setItem("starburst_mute",S.mute?"1":"0"); }catch(e){}
+  saveProgress();
   $("btn-mute").style.opacity=S.mute?0.45:1;
 });
-try{ S.mute = localStorage.getItem("starburst_mute")==="1"; $("btn-mute").style.opacity=S.mute?0.45:1; }catch(e){}
+$("btn-mute").style.opacity=S.mute?0.45:1;
 refreshMenuCoins();
 requestAnimationFrame(loop);
 </script>

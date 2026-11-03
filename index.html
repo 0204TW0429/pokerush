@@ -57,7 +57,31 @@
   .overlay[hidden] { display:none; }
 
   /* ===== 开始界面 ===== */
-  #menu .game-title { font-size:44px; font-weight:900; letter-spacing:8px; background:linear-gradient(120deg,#22d3ee 10%,#a78bfa 55%,#fb923c 95%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 0 18px rgba(34,211,238,.35)); }
+  .pk-bg { position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(circle at 84% 10%, rgba(255,255,255,.55) 0 5%, transparent 6%),
+      radial-gradient(circle at 68% 14%, rgba(255,255,255,.4) 0 3%, transparent 4%),
+      linear-gradient(#7ec8e3 0 40%, #6cbe4f 40% 100%); }
+  .pk-bg::before { content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.07) 0 26px, transparent 26px 52px),
+      repeating-linear-gradient(90deg, rgba(15,40,10,.05) 0 34px, transparent 34px 68px); }
+  .pk-bg::after { content:""; position:absolute; right:5%; top:46%; width:58px; height:58px; border-radius:50%;
+    background:linear-gradient(180deg,#ef4444 0 50%,#f8fafc 50% 100%); border:4px solid #0f172a;
+    box-shadow:inset 0 0 0 3px #f8fafc, 0 0 0 2px #0f172a; opacity:.55; }
+  .pk-bg::marker { content:""; position:absolute; left:6%; top:44%; width:26px; height:26px; border-radius:50%;
+    background:linear-gradient(180deg,#ef4444 0 50%,#f8fafc 50% 100%); border:3px solid #0f172a; opacity:.4; }
+  #menu>*:not(.pk-bg), #collection>*:not(.pk-bg), #shop>*:not(.pk-bg) { position:relative; z-index:1; }
+  #menu .game-title { font-size:46px; font-weight:900; letter-spacing:8px; color:#ffd54f;
+    -webkit-text-stroke:2px #1565c0; text-shadow:4px 4px 0 #0d47a1, -1px -1px 0 #1565c0; }
+  #menu .menu-btns { background:rgba(255,255,255,.88); border:4px solid #0f172a; border-radius:16px;
+    padding:20px 26px; box-shadow:5px 5px 0 rgba(2,6,23,.28); }
+  #menu .menu-btns .btn { margin-top:0; box-shadow:0 4px 0 rgba(2,6,23,.25); }
+  #menu .intro, #menu .controls, #menu .menu-coins { text-shadow:1px 1px 0 rgba(2,6,23,.35); color:#1e293b; }
+  #menu .intro span { color:#15803d; }
+  #menu .menu-coins b { color:#b45309; }
+  #collection .col-title, #shop .col-title { color:#ffd54f; -webkit-text-stroke:1.5px #1565c0; text-shadow:3px 3px 0 #0d47a1; }
+  #collection .col-sub, #shop .col-sub { color:#1e293b; text-shadow:1px 1px 0 rgba(255,255,255,.5); }
+  #shop-grid, #shop-tabs, #shop-page { position:relative; z-index:1; }
   #menu .sub { font-size:15px; color:#94a3b8; margin-top:10px; letter-spacing:3px; }
   #menu .intro { margin-top:26px; max-width:340px; font-size:14px; color:#cbd5e1; line-height:1.9; text-align:center; }
   #menu .intro span { color:#67e8f9; }
@@ -66,12 +90,43 @@
   #menu .menu-coins b { font-size:18px; color:#fbbf24; }
   #menu .menu-btns { display:flex; flex-direction:column; align-items:center; gap:12px; }
   #menu .menu-user { font-size:12px; color:#818cf8; letter-spacing:1px; }
+  .player-card { position:absolute; left:14px; top:12px; display:flex; align-items:center; gap:10px; cursor:pointer;
+    background:rgba(15,23,42,.62); border:1px solid rgba(129,140,248,.4); border-radius:14px; padding:8px 12px; z-index:5; }
+  .player-card:hover { border-color:#a78bfa; }
+  .player-card canvas { width:56px; height:56px; border-radius:12px; background:rgba(2,6,23,.5); }
+  .pc-info { display:flex; flex-direction:column; gap:2px; }
+  .pc-name { font-size:15px; font-weight:800; color:#f8fafc; letter-spacing:1px; }
+  .pc-row { font-size:11px; color:#94a3b8; }
+  .profile-panel { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 26px; max-width:520px; width:92vw; max-height:80vh; overflow-y:auto; }
+  .prof-head { display:flex; align-items:center; gap:16px; }
+  .prof-head canvas { width:96px; height:96px; border-radius:14px; background:rgba(2,6,23,.5); }
+  .prof-info { display:flex; flex-direction:column; gap:5px; }
+  .prof-name { font-size:20px; font-weight:800; color:#f8fafc; }
+  .prof-row { font-size:13px; color:#cbd5e1; }
+  .prof-row b { color:#fbbf24; }
+  .ach-title { font-size:17px; font-weight:800; letter-spacing:4px; color:#f8fafc; margin-top:6px; }
+  .ach-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; width:100%; margin-top:6px; }
+  @media (max-width:560px){ .ach-grid { grid-template-columns:1fr; } }
+  .ach-it { display:flex; align-items:center; gap:8px; font-size:13px; color:#e2e8f0; background:rgba(15,23,42,.65);
+    border:1px solid rgba(148,163,184,.25); border-radius:10px; padding:8px 10px; }
+  .ach-it.locked { opacity:.45; filter:grayscale(.6); }
+  .ach-it .ai { font-size:16px; }
+  .ach-it .an { font-weight:700; }
+  .ach-it .ad { font-size:11px; color:#94a3b8; }
+  .av-pick { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; width:100%; max-height:180px; overflow-y:auto; padding:4px; }
+  .av-it { border:none; background:rgba(15,23,42,.6); border-radius:10px; padding:4px; cursor:pointer; }
+  .av-it canvas { width:44px; height:44px; display:block; }
+  .av-it.cur { outline:2px solid #fbbf24; }
+  @media (max-width:560px){ .player-card { left:8px; top:8px; } }
   .p-row { display:flex; gap:12px; justify-content:center; margin-top:14px; }
   .auth-panel { display:flex; flex-direction:column; align-items:center; gap:10px; padding:26px 30px; }
   .auth-input { width:240px; padding:10px 12px; font-size:16px; color:#e2e8f0; background:rgba(15,23,42,.7);
     border:1px solid rgba(148,163,184,.35); border-radius:10px; outline:none; }
   .auth-input:focus { border-color:#818cf8; }
   .col-card .col-av { width:52px; height:52px; margin:0 auto 2px; border-radius:10px; background:rgba(2,6,23,.4); }
+  .form-row { display:flex; gap:4px; justify-content:center; margin-bottom:6px; }
+  .form-btn { min-width:26px; height:26px; border-radius:8px; border:1px solid rgba(148,163,184,.4); background:rgba(15,23,42,.7); color:#cbd5e1; font-size:12px; font-weight:700; cursor:pointer; }
+  .form-btn.cur { background:linear-gradient(120deg,#fbbf24,#f59e0b); color:#04121a; border-color:#fbbf24; }
   .catch-av { width:120px; height:120px; margin:0 auto 6px; }
   .catch-avhint { font-size:12px; color:#fbbf24; margin:2px 0 8px; }
   #catch-anim .ca-panel { display:flex; flex-direction:column; align-items:center; gap:12px; padding:26px 34px; }
@@ -85,12 +140,25 @@
   .ca-ball.shake { animation:caShake .5s linear 3; }
   @keyframes caFly { to { transform:translate(-48px,-58px); } }
   @keyframes caShake { 0%,100%{transform:translate(-48px,-58px) rotate(0)} 25%{transform:translate(-52px,-54px) rotate(-20deg)} 75%{transform:translate(-44px,-62px) rotate(20deg)} }
-  #shop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px;
+  #shop-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px;  /* 5 列 4 行 */ }
+  @media (max-width:720px){ #shop-grid { grid-template-columns:repeat(2,1fr); } }
+  #shop-page { display:flex; gap:8px; justify-content:center; margin:10px 0; }
+  #opening { background:#05060a !important; }
+  #opening canvas { border-radius:0; }
+  #opening .btn { margin-top:18px; }
+  .bgm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; width:100%; margin-top:10px; }
+  @media (max-width:560px){ .bgm-grid { grid-template-columns:repeat(2,1fr); } }
+  .bgm-btn { min-height:44px; border-radius:10px; border:1px solid rgba(148,163,184,.35); background:rgba(15,23,42,.7); color:#cbd5e1; font-size:14px; font-weight:700; cursor:pointer; }
+  .bgm-btn.cur { background:linear-gradient(120deg,#22d3ee,#67e8f9); color:#04121a; border-color:#22d3ee; }
+  #toast { position:fixed; left:50%; top:18%; transform:translateX(-50%); background:rgba(10,12,20,.92); border:1px solid #f87171; color:#fecaca;
+    padding:10px 20px; border-radius:12px; font-size:15px; z-index:99; opacity:0; pointer-events:none; transition:opacity .25s; max-width:80vw; text-align:center; }
     max-height:56vh; overflow-y:auto; padding:4px; margin-top:12px; }
   .shop-tabs { display:flex; gap:8px; justify-content:center; margin-top:10px; }
   .attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; max-height:52vh; overflow-y:auto; padding:6px; margin:12px 0; }
   .attr-it { display:flex; align-items:center; gap:6px; font-size:13px; color:#e2e8f0; background:rgba(15,23,42,.65); border:1px solid rgba(148,163,184,.25); border-radius:8px; padding:7px 9px; cursor:pointer; }
   .attr-desc { color:#94a3b8; font-size:11px; margin-left:auto; text-align:right; }
+  .tier-grp { border:1px solid rgba(148,163,184,.25); border-radius:10px; padding:8px; }
+  .tier-cap { font-size:13px; font-weight:800; color:#f8fafc; letter-spacing:2px; margin-bottom:6px; }
   #menu .menu-btns .btn { margin-top:0; }
   .btn {
     margin-top:26px; min-width:190px; min-height:52px; padding:0 28px; border:none; border-radius:12px;
@@ -314,8 +382,16 @@
 
   <!-- ===== 开始界面 ===== -->
   <div class="overlay" id="menu">
+    <div class="pk-bg" aria-hidden="true"></div>
+    <div class="player-card" id="player-card" title="点击查看个人主页">
+      <canvas id="pv-avatar" width="56" height="56"></canvas>
+      <div class="pc-info">
+        <div class="pc-name" id="pv-name">游客</div>
+        <div class="pc-row" id="pv-best">最佳 · 未通关</div>
+        <div class="pc-row" id="pv-counts">精灵 0 · 闪光 0</div>
+      </div>
+    </div>
     <div class="game-title">POKERUSH</div>
-    <div class="sub">STAR RING BREAKOUT</div>
     <div class="intro">
       你是星环站的最后一名驾驶员。<span>浮游炮塔会自动开火</span>，
       你只管走位闪避、拾取能量、升级强化，在无尽虫潮中活下来。
@@ -327,11 +403,13 @@
       <button class="btn ghost" id="btn-shop">商店</button>
       <button class="btn ghost" id="btn-collection">我的宝可梦</button>
       <button class="btn ghost" id="btn-auth">登录 / 注册</button>
+      <button class="btn ghost" id="btn-bgm">音乐</button>
     </div>
   </div>
 
   <!-- ===== 宝可梦图鉴 / 捕捉 / 进化 / 组队 ===== -->
   <div class="overlay" id="collection" hidden>
+    <div class="pk-bg" aria-hidden="true"></div>
     <div class="col-title">我的宝可梦</div>
     <div class="col-sub">金币 <b id="col-coins">0</b> · <span id="col-own"></span> · 全世代 1025 只</div>
     <div id="party-bar"></div>
@@ -359,6 +437,29 @@
     </div>
   </div>
 
+  <!-- ===== 个人主页：头像 / 数据 / 成就 ===== -->
+  <div class="overlay" id="profile" hidden>
+    <div class="panel profile-panel">
+      <h2 class="col-title">个人主页</h2>
+      <div class="prof-head">
+        <canvas id="prof-avatar" width="96" height="96"></canvas>
+        <div class="prof-info">
+          <div class="prof-name" id="prof-name">游客</div>
+          <div class="prof-row">最佳关卡 <b id="prof-best">未通关</b></div>
+          <div class="prof-row">解锁精灵 <b id="prof-own">0</b> · 闪光 <b id="prof-shiny">0</b> · 累计击杀 <b id="prof-kills">0</b></div>
+          <div class="prof-row">金币 <b id="prof-coins">0</b></div>
+        </div>
+      </div>
+      <button class="btn ghost" id="btn-avatar">更换头像</button>
+      <div class="av-pick" id="av-pick" hidden></div>
+      <div class="ach-title">成就</div>
+      <div class="ach-grid" id="ach-grid"></div>
+      <div class="p-row">
+        <button class="btn" id="btn-profile-back">返回</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== 属性专属技能选择（切换角色重新选择）===== -->
   <div class="overlay" id="attrpick" hidden>
     <div class="panel attr-panel">
@@ -374,10 +475,12 @@
 
   <!-- ===== 商店：Z 招式 / Mega 石 / 极巨化 ===== -->
   <div class="overlay" id="shop" hidden>
+    <div class="pk-bg" aria-hidden="true"></div>
     <div class="col-title">商店</div>
     <div class="col-sub">金币 <b id="shop-coins">0</b> · Z 招式 / Mega 石 / 极巨化（均按宝可梦原著设定）</div>
     <div class="shop-tabs" id="shop-tabs"></div>
     <div id="shop-grid"></div>
+    <div id="shop-page"></div>
     <button class="btn" id="btn-shop-back">返回</button>
   </div>
 
@@ -423,6 +526,22 @@
         <div class="ca-ball" id="ca-ball"></div>
       </div>
       <p class="catch-hint" id="ca-hint">精灵球飞出了…</p>
+    </div>
+  </div>
+
+  <!-- ===== 开场动画（火红叶绿经典风格 · 制作人 NoMo）===== -->
+  <div class="overlay" id="opening" hidden style="background:#05060a; z-index:60;">
+    <canvas id="op-canvas" width="420" height="320"></canvas>
+    <button class="btn ghost" id="btn-open-skip">跳过开场</button>
+  </div>
+
+  <!-- ===== 音乐 / BGM 世代选择 ===== -->
+  <div class="overlay" id="bgm-panel" hidden>
+    <div class="panel bgm-panel">
+      <h2 class="col-title">世代 BGM</h2>
+      <p class="col-sub">选择你喜欢的世代背景音乐（Web Audio 合成 · 可选关闭）</p>
+      <div class="bgm-grid" id="bgm-grid"></div>
+      <div class="p-row"><button class="btn" id="btn-bgm-back">返回</button></div>
     </div>
   </div>
 
@@ -476,7 +595,7 @@ const CONFIG = {
   },
   exp: { base:30, perLevel:16, magnet:170 },
   spawn: { interval:0.56, intervalMin:0.22, intervalDecay:0.05, batchMin:1, batchMax:2, eliteEvery:28 },
-  level: { duration:50, bossBase:390, bossPerStage:165, megaEvery:5, ultEvery:10, megaMult:3, ultMult:5 },
+  level: { duration:50, bossBase:520, bossPerStage:180, megaEvery:5, ultEvery:10, megaMult:3.6, ultMult:6 },
   levelup: { choices:3 },
   stars: { layers:[ {count:90, depth:0.25}, {count:40, depth:0.6} ] }
 };
@@ -1596,7 +1715,10 @@ function ensureTierSkills(id){       // 神兽/幻兽/普通精灵自带品质�
 }
 
 /* ===== Mega 石 / 极巨化 / Z 招式（金币购买 · 原著契合） ===== */
-const MEGA_COST=15000, DYNA_COST=30000, Z_COST=40000;
+const MEGA_COST=888, DYNA_COST=10000, Z_COST=788;   // 原著商店价：Mega 石 888 / Z 招式 788 / 极巨化 10000
+const DYNA_SET={ venusaur:1,charizard:1,blastoise:1,butterfree:1,pidgeot:1,gengar:1,machamp:1,kingler:1,lapras:1,eevee:1,snorlax:1,
+  corviknight:1,grimmsnarl:1,alcremie:1,copperajah:1,duraludon:1,toxtricity:1,centiskorch:1,sandaconda:1,cinderace:1,inteleon:1,rillaboom:1,melmetal:1,hatterene:1 };  // 原著可超极巨（Gigantamax）名单
+function canDyna(id){ return !!DYNA_SET[id]; }
 // 原著可 Mega 进化名单（第 6 代起引入，含世代限定形态）
 const MEGA_SET={ venusaur:1,charizard:1,blastoise:1,beedrill:1,pidgeot:1,alakazam:1,gengar:1,kangaskhan:1,pinsir:1,scyther:1,heracross:1,houndoom:1,slowbro:1,aerodactyl:1,gyarados:1,ampharos:1,scizor:1,steelix:1,tyranitar:1,sceptile:1,blaziken:1,swampert:1,gardevoir:1,sableye:1,mawile:1,aggron:1,medicham:1,manectric:1,sharpedo:1,camerupt:1,altaria:1,banette:1,absol:1,salamence:1,metagross:1,latias:1,latios:1,rayquaza:1,lopunny:1,garchomp:1,lucario:1,abomasnow:1,gallade:1,audino:1,diancie:1,glalie:1 };
 const MEGA_TEXT={ venusaur:"超级妙蛙花",charizard:"超级喷火龙",blastoise:"超级水箭龟",beedrill:"超级大针蜂",pidgeot:"超级大比鸟",alakazam:"超级胡地",gengar:"超级耿鬼",kangaskhan:"超级袋兽",pinsir:"超级凯罗斯",scyther:"超级飞天螳螂",heracross:"超级赫拉克罗斯",houndoom:"超级黑鲁加",slowbro:"超级呆壳兽",aerodactyl:"超级化石翼龙",gyarados:"超级暴鲤龙",ampharos:"超级电龙",scizor:"超级巨钳螳螂",steelix:"超级大钢蛇",tyranitar:"超级班基拉斯",sceptile:"超级蜥蜴王",blaziken:"超级火焰鸡",swampert:"超级巨沼怪",gardevoir:"超级沙奈朵",sableye:"超级勾魂眼",mawile:"超级大嘴娃",aggron:"超级波士可多拉",medicham:"超级恰雷姆",manectric:"超级雷电兽",sharpedo:"超级巨牙鲨",camerupt:"超级喷火驼",altaria:"超级七夕青鸟",banette:"超级诅咒娃娃",absol:"超级阿勃梭鲁",salamence:"超级暴飞龙",metagross:"超级巨金怪",latias:"超级拉帝亚斯",latios:"超级拉帝欧斯",rayquaza:"超级烈空坐",lopunny:"超级长耳兔",garchomp:"超级烈咬陆鲨",lucario:"超级路卡利欧",abomasnow:"超级暴雪王",gallade:"超级艾路雷朵",audino:"超级差不多娃娃",diancie:"超级蒂安希",glalie:"超级冰鬼护" };
@@ -1627,7 +1749,7 @@ function castZMove(){
   S.zCharge=0; updatePowerUI();
 }
 function tryDyna(){
-  if(!S.dynaUnlocked || S.dyna || S.dynaCharges<=0 || S.mode!=="playing") return;
+  if((!S.dynaUnlocked && !S.dynaOwned[S.activeRole]) || S.dyna || S.dynaCharges<=0 || S.mode!=="playing") return;
   S.dyna=true; S.dynaT=10; S.dynaCharges--;
   showBanner("极巨化！");
   sndLevel(); updatePowerUI();
@@ -1635,7 +1757,7 @@ function tryDyna(){
 function updatePowerUI(){
   const db=$("btn-dyna"), zb=$("z-bar");
   if(db){
-    db.hidden = !S.dynaUnlocked;
+    db.hidden = !(S.dynaUnlocked || S.dynaOwned[S.activeRole]);
     db.disabled = S.dyna || S.dynaCharges<=0 || S.mode!=="playing";
     db.innerHTML = S.dyna ? ("极巨化中<br><small>"+Math.ceil(S.dynaT)+"s</small>")
       : ("极巨化 ×"+S.dynaCharges+"<br><small>G</small>");
@@ -1667,7 +1789,7 @@ const S = {
   buff:{ oc:0, rage:0 }, holes:[],   // 超频/狂暴 计时 · 黑洞
   puddles:[], ebullets:[],           // 呕吐毒池 · 敌方激光弹
   mega:{},                      // 已购 Mega 石（id → true，永久）
-  dynaUnlocked:false, dyna:false, dynaT:0, dynaCharges:1,  // 极巨化
+  dynaUnlocked:false, dyna:false, dynaT:0, dynaCharges:1, dynaOwned:{},  // 极巨化（按精灵超极巨名单）
   zUnlocked:false, zCharge:0,   // Z 手环 + 能量条 0-100
   stats:{ kills:0 },
   best: null,
@@ -1677,7 +1799,11 @@ const S = {
   audio:null,             // 桌面端 Web Audio
   joy:{ active:false, baseX:0, baseY:0, dx:0, dy:0 },
   input:{ x:0, y:0 },
-  colGen:"1"             // 图鉴世代筛选
+  colGen:"1",            // 图鉴世代筛选
+  avatar:"pikachu",       // 玩家头像（可从已解锁精灵选择）
+  achieves:{},            // 成就解锁时间戳
+  formPick:{},            // 战前形态选择（id→当前使用形态；进化后初始形态保留）
+  bgm:"1"                 // 世代 BGM 选择（off 或 1-9）
 };
 // 加载进度（捕捉/金币持久化）
 /* ===== 多账户系统：登录后各自保存，本机 localStorage 持久化 ===== */
@@ -1732,24 +1858,60 @@ function loadProgress(){
   if(Array.isArray(d.party)) S.party=d.party.filter(id=>POKEDEX[id]);
   if(d.mega && typeof d.mega==="object") S.mega=d.mega;
   S.dynaUnlocked = !!d.dyna;
+  if(d.dynaOwned && typeof d.dynaOwned==="object") S.dynaOwned=d.dynaOwned;
   S.zUnlocked = !!d.z;
   if(d.zOwned && typeof d.zOwned==="object") S.zOwned=d.zOwned;
   if(d.attrPick && typeof d.attrPick==="object") S.attrPick=d.attrPick;
   if(d.attrLv && typeof d.attrLv==="object") S.attrLv=d.attrLv;
   if(d.best) S.best=d.best;
   S.mute = !!d.mute;
+  S.avatar = (d.avatar && POKEDEX[d.avatar]) ? d.avatar : "pikachu";
+  if(d.achieves && typeof d.achieves==="object") S.achieves=d.achieves;
+  if(d.formPick && typeof d.formPick==="object") S.formPick=d.formPick;
+  if(d.bgm) S.bgm=d.bgm;
+  if(d.kills) S.stats.kills = +d.kills||0;
   if(S.zUnlocked && !Object.keys(S.zOwned).length){ S.zOwned[PK(S.activeRole).attr]=true; }  // 老手环：默认本命属性
 }
 loadProgress();
+function showToast(msg){
+  const t=$("toast"); if(!t) return;
+  t.textContent=msg; t.style.opacity=1;
+  clearTimeout(t._h); t._h=setTimeout(()=>{ t.style.opacity=0; }, 1800);
+}
 function saveProgress(){
   try{
     const data={ roster:S.roster, coins:S.coins, shiny:S.shiny, slots:S.partySlots, party:S.party,
-      mega:S.mega, dyna:S.dynaUnlocked, z:S.zUnlocked, zOwned:S.zOwned, best:S.best, mute:S.mute, attrPick:S.attrPick, attrLv:S.attrLv };
+      mega:S.mega, dyna:S.dynaUnlocked, dynaOwned:S.dynaOwned, z:S.zUnlocked, zOwned:S.zOwned, best:S.best, mute:S.mute, attrPick:S.attrPick, attrLv:S.attrLv,
+      avatar:S.avatar, achieves:S.achieves, kills:S.stats.kills, formPick:S.formPick, bgm:S.bgm };
     localStorage.setItem("pokerush_save_"+currentUser(), JSON.stringify(data));
   }catch(e){}
 }
+const ACHIEVES=[
+  {id:"first", name:"初出茅庐", desc:"累计击败 1 只宝可梦", icon:"⚔", check:()=>S.stats.kills>=1},
+  {id:"kill100", name:"百战之躯", desc:"累计击败 100 只宝可梦", icon:"⚔", check:()=>S.stats.kills>=100},
+  {id:"kill500", name:"千军万马", desc:"累计击败 500 只宝可梦", icon:"⚔", check:()=>S.stats.kills>=500},
+  {id:"win1", name:"新手上路", desc:"首次通关第 1 关", icon:"🏆", check:()=>S.best>=1},
+  {id:"win10", name:"十面埋伏", desc:"通关第 10 关", icon:"🏆", check:()=>S.best>=10},
+  {id:"win25", name:"一代宗师", desc:"通关第 25 关", icon:"🏆", check:()=>S.best>=25},
+  {id:"own50", name:"收藏家", desc:"解锁 50 只宝可梦", icon:"📖", check:()=>Object.keys(S.roster).length>=50},
+  {id:"own200", name:"图鉴大师", desc:"解锁 200 只宝可梦", icon:"📖", check:()=>Object.keys(S.roster).length>=200},
+  {id:"shiny1", name:"闪光奇缘", desc:"捕捉 1 只闪光宝可梦", icon:"✨", check:()=>Object.keys(S.shiny).length>=1},
+  {id:"shiny5", name:"闪光猎手", desc:"捕捉 5 只闪光宝可梦", icon:"✨", check:()=>Object.keys(S.shiny).length>=5},
+  {id:"rich", name:"土豪", desc:"持有 3000 金币", icon:"💰", check:()=>S.coins>=3000},
+  {id:"rich10k", name:"富可敌国", desc:"持有 10000 金币", icon:"💰", check:()=>S.coins>=10000},
+  {id:"final1", name:"满级之姿", desc:"拥有 1 只最终形态宝可梦", icon:"🆙", check:()=>Object.values(S.roster).some(f=>f>=3)},
+  {id:"attr10", name:"属性大师", desc:"装备 10 个属性专属技能", icon:"✨", check:()=>Object.keys(S.attrPick).length>=10}
+];
+function checkAchieves(){
+  let n=0, first=null;
+  for(const a of ACHIEVES){
+    if(!S.achieves[a.id] && a.check()){ S.achieves[a.id]=Date.now(); if(!first) first=a; n++; }
+  }
+  if(n){ saveProgress(); if(S.mode==="menu") renderProfile(); }
+  return n;
+}
 function PK(id){ return POKEDEX[id]||POKEDEX.pichu; }
-function roleForm(id){ return S.roster[id]||1; }
+function roleForm(id){ return S.formPick[id] || S.roster[id] || 1; }
 function roleAtk(id){ const f=roleForm(id); const base=f>=3?1.22:(f>=2?1.1:1); return (S.shiny[id]?base*2:base)*(S.mega[id]?1.25:1); }
 function roleMul(id){ const f=roleForm(id); return (f>=3?2.2:(f>=2?1.5:1))*(S.mega[id]?1.3:1); }
 function roleMaxForm(id){ const R=PK(id); return R.top?3:(R.mid?2:1); }
@@ -1832,10 +1994,11 @@ function spawnElite(){
 }
 const BOSS_SKILLS={ ring:{name:"环形弹幕"}, seeker:{name:"追踪弹"}, fan:{name:"扇形散射"},
   charge:{name:"蓄力冲撞"}, summon:{name:"召唤小怪"}, aoe:{name:"震地波"}, nova:{name:"星域湮灭"} };
-function rollBossSkills(ult,mega){   // 普通 1 个 · 大 Boss 2 个 · 终极 3 个，随机不重复
-  const n = ult?3 : mega?2 : 1;
-  const pool=["ring","seeker","fan","charge","summon","aoe"];
-  if(ult) pool.push("nova");
+function rollBossSkills(ult,mega,myth){   // 普通 2 个 · 幻兽 2 · 大 Boss 3 · 终极 4，随机不重复；1-5 关普通 Boss 无技能
+  if(S.stage<=5 && !ult && !mega && !myth) return [];
+  const n = ult?4 : mega?3 : myth?2 : 2;
+  const pool=["ring","seeker","fan","charge","summon","aoe","cross","rain"];
+  if(ult||mega) pool.push("nova");
   const out=[];
   while(out.length<n && pool.length){ const i=Math.floor(Math.random()*pool.length); out.push(pool[i]); pool.splice(i,1); }
   return out;
@@ -1844,20 +2007,21 @@ function spawnBoss(){
   S.bossActive = true;
   S.enemies.length = 0;                                              // 清场，专注 Boss
   // 每 10 关终极 Boss（一级神）· 每 5 关大 Boss（二级神）· 其余普通 Boss（全部随机）
-  let ult=false, mega=false, name="", bid, qid=null;
+  let ult=false, mega=false, myth=false, name="", bid, qid=null;
   if(S.stage % CONFIG.level.ultEvery === 0){ ult=true; const g=GODS_1[Math.floor(Math.random()*GODS_1.length)]; bid=g.attr; name=g.name; qid=g.id; }
   else if(S.stage % CONFIG.level.megaEvery === 0){ mega=true; const g=GODS_2[Math.floor(Math.random()*GODS_2.length)]; bid=g.attr; name=g.name; qid=g.id; }
+  else if(S.stage % 10 === 1 && S.stage > 1){ myth=true; const mk=Object.keys(MYTH); const mi=mk[Math.floor(Math.random()*mk.length)]; bid=PK(mi).attr; name=PK(mi).name; qid=mi; }  // 每大关第一关：幻兽
   else { const gi=POKEDEX_KEYS[Math.floor(Math.random()*POKEDEX_KEYS.length)]; bid=PK(gi).attr; name=PK(gi).name; qid=gi; }
   S.bossId = bid;
   const a = rand(0, Math.PI*2);
   const d = Math.max(W,H)*0.5 + 60;
   const base = CONFIG.level.bossBase + (S.stage-1)*CONFIG.level.bossPerStage;
-  const m = ult ? CONFIG.level.ultMult : mega ? CONFIG.level.megaMult : 1;
-  S.enemies.push({ type:"boss", attr:bid, name, mega, ult, x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d,
-    r: ult?74: mega?58:40, hp:base*m, maxHp:base*m, speed: ult?44: mega?40:32, dmg: ult?60: mega?50:35, exp:0,
+  const m = ult ? CONFIG.level.ultMult : mega ? CONFIG.level.megaMult : myth ? 2.2 : 1;
+  S.enemies.push({ type:"boss", attr:bid, name, mega, ult, myth, x:W/2+Math.cos(a)*d, y:H/2+Math.sin(a)*d,
+    r: ult?74: mega?58: myth?52:40, hp:base*m, maxHp:base*m, speed: ult?44: mega?40: myth?38:32, dmg: ult?75: mega?60: myth?45:40, exp:0,
     angle:a, wob:0, elite:false, dead:false,
-    bskills: rollBossSkills(ult,mega), bskillCd: rand(2,4), bskillT:0, chargeT:0, qid });
-  const tag = ult ? ("终极 Boss · "+name) : mega ? ("大 Boss · "+name) : ("BOSS 来袭 · "+name);
+    bskills: rollBossSkills(ult,mega,myth), bskillCd: rand(2,4), bskillT:0, chargeT:0, qid });
+  const tag = ult ? ("终极 Boss · "+name) : mega ? ("大 Boss · "+name) : myth ? ("幻兽 · "+name) : ("BOSS 来袭 · "+name);
   showBanner(tag);
   sndExplode(true);
 }
@@ -1905,6 +2069,7 @@ function finishCatchAnim(ok){
     saveProgress();
     showBanner("捕捉到 "+(shiny?"★闪光 ":"")+PK(id).name+"！");
     sndLevel();
+    checkAchieves();
     if(S.lastUlt) rollUltLoot();                         // 终极 Boss：1% 掉道具
     finishStage();
   } else {
@@ -1937,6 +2102,8 @@ function finishStage(){
   S.stage++;
   S.stageTimer = CONFIG.level.duration;
   S.enemies.length = 0; S.bullets.length = 0; S.puddles.length = 0; S.ebullets.length = 0; S.bossAoEs.length = 0;
+  S.best = Math.max(S.best||0, S.stage-1);
+  checkAchieves();
   const p = S.player;
   p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 3 层（上限 150）· 装甲每关 +1（最多 3 层）
   refreshHpUI(); syncShieldUI(); syncArmorUI();
@@ -2180,6 +2347,11 @@ function update(dt){
           r:9,hp:12,maxHp:12,speed:160,dmg:10,exp:6,angle:rand(0,6.28),wob:0,elite:false,dead:false}); }
         else if(sk==="charge"){ e.chargeT=0.85; burst(e.x,e.y,"#fbbf24",16,220); }
         else if(sk==="aoe"){ S.bossAoEs.push({x:e.x,y:e.y,r:150,warn:0.7,t:0.7,dmg:22,bossSkill:true}); }
+        else if(sk==="cross"){ for(let k=0;k<4;k++){ const aa=k/4*6.28;
+          for(let j=0;j<3;j++) S.ebullets.push({x:e.x+Math.cos(aa)*(14+j*20),y:e.y+Math.sin(aa)*(14+j*20),vx:Math.cos(aa)*(spd+j*70),vy:Math.sin(aa)*(spd+j*70),r:5,life:1.6,dmg:15,bossSkill:true}); } }
+        else if(sk==="rain"){ const base=Math.atan2(p.y-e.y,p.x-e.x);
+          for(let j=0;j<6;j++){ const off=(j-2.5)*0.18; const sp2=spd*0.5;
+            S.ebullets.push({x:e.x,y:e.y,vx:Math.cos(base+off)*sp2,vy:Math.sin(base+off)*sp2,r:6,life:2.2,dmg:17,bossSkill:true}); } }
         else if(sk==="nova"){ S.bossAoEs.push({x:e.x,y:e.y,r:260,warn:1.0,t:1.0,dmg:30,bossSkill:true}); burst(e.x,e.y,"#a78bfa",30,300); }
         sndExplode(false);
       }
@@ -2357,7 +2529,7 @@ function nearestEnemy(x,y){
 function playerDamage(dmg,bossSkill){
   const p=S.player;
   if(S.shieldSurgeT>0 || p.inv>0) return;                     // 临时护盾（护盾涌能）期间免疫
-  if((bossSkill||dmg>=25) && p.armor>0){                      // 装甲：抵挡大额伤害或 Boss 技能
+  if((bossSkill||dmg>40) && p.armor>0){                      // 装甲：抵挡 Boss 技能与超过 40 的伤害
     p.armor--; p.inv=0.8; syncArmorUI(); burst(p.x,p.y,"#fbbf24",18,240); sndHit(true); return;
   }
   if(p.shieldLvl>0){                                          // 护盾：抵挡一切伤害（消耗 1 层）
@@ -2902,7 +3074,7 @@ const FUSIONS=[
   { a:"rich",      b:"greed",      id:"plutocrat",  name:"亿万富翁", max:3, rarity:3, fx:"gold",      fus:true, desc:"融合 · 击杀金币 +80%（每级）" },
 ];
 const SKILLMAP = {};
-for(const s of SKILLS.concat(FUSIONS)) SKILLMAP[s.id]=s;
+for(const s of SKILLS.concat(FUSIONS, ATTR_SKILLS)) SKILLMAP[s.id]=s;   // 属性专属技能并入映射：fx 聚合 / 升级 / 暂停面板全部生效
 function skillLvl(id){ return S.skills[id]||0; }
 function maxOf(id){ return (SKILLMAP[id]||{}).max||3; }
 function isFusion(id){ return !!(SKILLMAP[id]||{}).fus; }
@@ -2932,8 +3104,9 @@ function availableChoices(){
   const carry = Object.keys(S.skills).length;
   const fCount = Object.keys(S.skills).filter(isFusion).length;
   // 普通技能 + 已拥有融合技能的升级；携带上限 25（融合产生另计 10 上限）
-  const skills = SKILLS.concat(FUSIONS).filter(s=>{
+  const skills = SKILLS.concat(FUSIONS, ATTR_SKILLS).filter(s=>{
     if(s.fus && !S.skills[s.id]) return false;      // 融合技能先融合获得
+    if(s.attr && !S.skills[s.id]) return false;     // 属性专属：仅已装备者可继续升级
     if(S.skills[s.id]) return S.skills[s.id] < s.max; // 已拥有 → 可升级
     return carry < 25;                               // 未拥有普通 → 受携带上限
   }).map(s=>({
@@ -3930,6 +4103,203 @@ function drawNeutral(x,y,r,rot,form){ // 普通系：猫耳 + 胡须 + 卷尾（
 }
 /* ===== Q 版原著风绘制（大头圆身 · 特征元素按原著） ===== */
 const Q_FEAT={
+  "reuniclus":{c:"#4ade80",b:"#dcfce7",parts:[["eye","red",0,-0.35,0.18,"#f87171"],["tentacle","",-0.55,0.25,0.6,"#4ade80"],["tentacle","",0.55,0.25,0.6,"#4ade80"]]},   // 人造细胞卵 · 原著绿色凝胶体
+  "solosis":{c:"#86efac",b:"#dcfce7",parts:[["eye","red",0,-0.35,0.2,"#f87171"]]},
+  "duosion":{c:"#6ee7b7",b:"#d1fae5",parts:[["eye","red",0,-0.35,0.22,"#f87171"],["tentacle","",-0.5,0.3,0.5,"#6ee7b7"],["tentacle","",0.5,0.3,0.5,"#6ee7b7"]]},
+  "sandaconda":{c:"#d6a15c",b:"#fde8c9",body:"snake",parts:[["spike","",-0.55,-0.3,0.5,"#8a5a2b"],["spike","",0.55,-0.3,0.5,"#8a5a2b"],["tail","curl",0,0.6,0.4,"#d6a15c"]]},   // 沙包蛇 · 蛇形
+  "ekans":{c:"#a78bfa",b:"#efe4fa",body:"snake",parts:[["tail","curl",0,0.65,0.5,"#a78bfa"]]},
+  "arbok":{c:"#b45309",b:"#fde8c9",body:"snake",parts:[["crest","crown",0,-0.4,0.4,"#ef4444"],["tail","curl",0,0.65,0.55,"#d97706"]]},
+  "onix":{c:"#94a3b8",b:"#cbd5e1",body:"snake",parts:[["horn","short",-0.3,-0.45,0.45,"#64748b"],["horn","short",0.3,-0.45,0.45,"#64748b"]]},
+  "steelix":{c:"#64748b",b:"#94a3b8",body:"snake",parts:[["horn","short",-0.3,-0.45,0.55,"#334155"],["horn","short",0.3,-0.45,0.55,"#334155"],["crystal","",0,-0.5,0.4,"#fbbf24"]]},
+  "dratini":{c:"#93c5fd",b:"#e0f2fe",body:"snake",parts:[["fin","",0,-0.35,0.4,"#60a5fa"],["ear","round",-0.45,-0.5,0.3,"#f8fafc"],["ear","round",0.45,-0.5,0.3,"#f8fafc"]]},
+  "dragonair":{c:"#60a5fa",b:"#dbeafe",body:"snake",parts:[["crystal","",0,-0.45,0.5,"#f87171"],["horn","short",-0.4,-0.5,0.35,"#3b82f6"],["horn","short",0.4,-0.5,0.35,"#3b82f6"]]},
+  "magnemite":{c:"#cbd5e1",b:"#e2e8f0",body:"block",parts:[["magnet","",-0.5,-0.3,0.35,"#ef4444"],["magnet","",0.5,-0.3,0.35,"#ef4444"],["eye","red",-0.25,0.1,0.22,"#f87171"],["eye","red",0.25,0.1,0.22,"#f87171"]]},
+  "magneton":{c:"#cbd5e1",b:"#e2e8f0",body:"block",parts:[["magnet","",-0.5,-0.3,0.35,"#ef4444"],["magnet","",0.5,-0.3,0.35,"#ef4444"],["magnet","",0,-0.5,0.35,"#3b82f6"]]},
+  "staryu":{c:"#fbbf24",b:"#fef3c7",body:"star5",parts:[["crystal","",0,-0.4,0.3,"#f87171"]]},
+  "starmie":{c:"#a78bfa",b:"#ede9fe",body:"star5",parts:[["crystal","",0,-0.45,0.35,"#ef4444"]]},
+  "exeggcute":{c:"#f9a8d4",b:"#fce7f3",parts:[["egg","",-0.3,-0.3,0.35,"#f9a8d4"],["egg","",0.3,-0.3,0.35,"#f9a8d4"],["egg","",0,-0.05,0.4,"#fde68a"],["eye","red",-0.3,-0.2,0.16,"#0f172a"],["eye","red",0.3,-0.2,0.16,"#0f172a"]]},
+  "exeggutor":{c:"#d6a15c",b:"#fde8c9",body:"tall",parts:[["egg","",-0.3,-0.75,0.35,"#f9a8d4"],["egg","",0.3,-0.75,0.35,"#f9a8d4"],["egg","",0,-0.6,0.4,"#fde68a"]]},
+  "geodude":{c:"#c9b08c",b:"#e8d8bd",body:"block",parts:[["arm","",-0.6,0.2,0.5,"#c9b08c"],["arm","",0.6,0.2,0.5,"#c9b08c"]]},
+  "graveler":{c:"#b08a5a",b:"#dcc8a6",body:"block",parts:[["arm","",-0.65,0.2,0.55,"#b08a5a"],["arm","",0.65,0.2,0.55,"#b08a5a"],["spike","",-0.55,-0.4,0.4,"#8a5a2b"],["spike","",0.55,-0.4,0.4,"#8a5a2b"]]},
+  "golem":{c:"#a98467",b:"#d4b896",body:"block",parts:[["arm","",-0.7,0.2,0.6,"#a98467"],["arm","",0.7,0.2,0.6,"#a98467"],["horn","short",-0.45,-0.5,0.5,"#7c5a3c"],["horn","short",0.45,-0.5,0.5,"#7c5a3c"]]},
+  "abra":{c:"#fbbf24",b:"#fef3c7",parts:[["ear","long",-0.5,-0.5,0.5,"#d97706"],["ear","long",0.5,-0.5,0.5,"#d97706"],["tail","whip",0,0.6,0.5,"#fbbf24"]]},
+  "kadabra":{c:"#f59e0b",b:"#fef3c7",parts:[["ear","long",-0.5,-0.5,0.5,"#d97706"],["ear","long",0.5,-0.5,0.5,"#d97706"],["crest","crown",0,-0.55,0.4,"#b45309"]]},
+  "alakazam":{c:"#eab308",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.55,"#ca8a04"],["ear","long",0.5,-0.5,0.55,"#ca8a04"],["crest","crown",0,-0.55,0.5,"#a16207"]]},
+  "clefairy":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.35,"#f9a8d4"],["ear","round",0.5,-0.5,0.35,"#f9a8d4"],["curl","",0,-0.6,0.4,"#f472b6"]]},
+  "clefable":{c:"#f0abfc",b:"#fdf4ff",parts:[["ear","round",-0.5,-0.5,0.4,"#f0abfc"],["ear","round",0.5,-0.5,0.4,"#f0abfc"]]},
+  "vulpix":{c:"#f59e0b",b:"#fef3c7",parts:[["ear","long",-0.5,-0.5,0.45,"#d97706"],["ear","long",0.5,-0.5,0.45,"#d97706"],["tail","fluffy",0,0.8,0.7,"#fbbf24"]]},
+  "ninetales":{c:"#fbbf24",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.5,"#f59e0b"],["ear","long",0.5,-0.5,0.5,"#f59e0b"],["tail","fluffy",0,0.85,0.8,"#fde68a"]]},
+  "growlithe":{c:"#f59e0b",b:"#fef3c7",parts:[["ear","round",-0.5,-0.5,0.4,"#ea580c"],["ear","round",0.5,-0.5,0.4,"#ea580c"],["tail","fluffy",0,0.7,0.6,"#fb923c"]]},
+  "arcanine":{c:"#ea580c",b:"#ffedd5",parts:[["ear","long",-0.5,-0.5,0.55,"#c2410c"],["ear","long",0.5,-0.5,0.55,"#c2410c"],["tail","fluffy",0,0.85,0.8,"#fb923c"]]},
+  "oddish":{c:"#4ade80",b:"#dcfce7",parts:[["bud","",0,-0.05,0.6,"#a3e635"],["leaf","",-0.5,-0.35,0.4,"#22c55e"],["leaf","",0.5,-0.35,0.4,"#22c55e"]]},
+  "gloom":{c:"#a78bfa",b:"#f3e8ff",parts:[["bud","",0,-0.05,0.65,"#f472b6"],["leaf","",-0.5,-0.35,0.45,"#22c55e"],["leaf","",0.5,-0.35,0.45,"#22c55e"]]},
+  "vileplume":{c:"#3b82f6",b:"#dbeafe",parts:[["bud","",0,-0.15,0.95,"#f472b6"]]},
+  "diglett":{c:"#d6a15c",b:"#fde8c9",body:"oval",parts:[["nose","",0,0.1,0.2,"#8a5a2b"]]},
+  "dugtrio":{c:"#c98a4b",b:"#fbe8c8",body:"tall",parts:[["nose","",-0.25,0.1,0.16,"#8a5a2b"],["nose","",0.25,0.1,0.16,"#8a5a2b"],["nose","",0,-0.3,0.18,"#8a5a2b"]]},
+  "persian":{c:"#e8dcb8",b:"#f8f2e0",parts:[["ear","long",-0.5,-0.5,0.5,"#e8dcb8"],["ear","long",0.5,-0.5,0.5,"#e8dcb8"],["coin","",0,0.05,0.22,"#f87171"]]},
+  "golduck":{c:"#3b82f6",b:"#dbeafe",parts:[["bill","",0,0.1,0.35,"#f59e0b"],["crest","crown",0,-0.55,0.35,"#1d4ed8"]]},
+  "mankey":{c:"#e8b64c",b:"#fdf0d5",parts:[["ear","round",-0.5,-0.5,0.3,"#e8b64c"],["ear","round",0.5,-0.5,0.3,"#e8b64c"],["tail","fluffy",0,0.7,0.5,"#c98a4b"]]},
+  "primeape":{c:"#d97706",b:"#ffe8d1",parts:[["ear","round",-0.5,-0.5,0.3,"#d97706"],["ear","round",0.5,-0.5,0.3,"#d97706"],["crest","crown",0,-0.55,0.35,"#92400e"]]},
+  "machop":{c:"#94a3b8",b:"#e2e8f0",parts:[["band","",0,-0.35,0.9,"#ef4444"],["arm","",-0.55,0.25,0.5,"#94a3b8"],["arm","",0.55,0.25,0.5,"#94a3b8"]]},
+  "machoke":{c:"#7d8ea3",b:"#d4dce6",parts:[["band","",0,-0.35,0.95,"#ef4444"],["arm","",-0.6,0.25,0.6,"#7d8ea3"],["arm","",0.6,0.25,0.6,"#7d8ea3"]]},
+  "machamp":{c:"#64748b",b:"#cbd5e1",parts:[["band","",0,-0.35,1.0,"#ef4444"],["arm","",-0.7,0.25,0.7,"#64748b"],["arm","",0.7,0.25,0.7,"#64748b"]]},
+  "bellsprout":{c:"#a3e635",b:"#ecfccb",body:"tall",parts:[["leaf","",-0.4,-0.7,0.45,"#22c55e"],["leaf","",0.4,-0.7,0.45,"#22c55e"],["leaf","",0,-0.2,0.4,"#4ade80"]]},
+  "weepinbell":{c:"#86efac",b:"#dcfce7",body:"tall",parts:[["leaf","",-0.4,-0.65,0.5,"#22c55e"],["leaf","",0.4,-0.65,0.5,"#22c55e"]]},
+  "victreebel":{c:"#6ee7b7",b:"#d1fae5",body:"tall",parts:[["leaf","",-0.5,-0.7,0.6,"#15803d"],["leaf","",0.5,-0.7,0.6,"#15803d"],["horn","short",0,-0.35,0.4,"#16a34a"]]},
+  "ponyta":{c:"#fbbf24",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.5,"#f59e0b"],["ear","long",0.5,-0.5,0.5,"#f59e0b"],["tail","flame",0,0.8,0.8,"#f97316"]]},
+  "rapidash":{c:"#f8fafc",b:"#f8fafc",parts:[["horn","long",0,-0.65,0.6,"#fbbf24"],["ear","long",-0.5,-0.5,0.5,"#e2e8f0"],["ear","long",0.5,-0.5,0.5,"#e2e8f0"],["tail","flame",0,0.85,0.9,"#f97316"]]},
+  "slowpoke":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.4,"#f9a8d4"],["ear","round",0.5,-0.5,0.4,"#f9a8d4"],["tail","curl",0,0.8,0.4,"#f472b6"]]},
+  "slowbro":{c:"#f472b6",b:"#fce7f3",parts:[["shell","",0,0.5,0.9,"#b45309"],["ear","round",-0.5,-0.5,0.4,"#f472b6"],["ear","round",0.5,-0.5,0.4,"#f472b6"]]},
+  "drowzee":{c:"#fbbf24",b:"#fef3c7",parts:[["ear","round",-0.5,-0.5,0.35,"#d97706"],["ear","round",0.5,-0.5,0.35,"#d97706"],["nose","",0,0.1,0.25,"#b45309"]]},
+  "hypno":{c:"#f59e0b",b:"#fef3c7",parts:[["ear","round",-0.5,-0.5,0.35,"#d97706"],["ear","round",0.5,-0.5,0.35,"#d97706"],["coin","",0,0.05,0.3,"#fbbf24"]]},
+  "krabby":{c:"#ef4444",b:"#fee2e2",parts:[["claw","",-0.6,0.1,0.5,"#dc2626"],["claw","",0.6,0.1,0.5,"#dc2626"]]},
+  "kingler":{c:"#dc2626",b:"#fecaca",parts:[["claw","",-0.75,0.1,0.75,"#b91c1c"],["claw","",0.75,0.1,0.75,"#b91c1c"],["horn","short",-0.5,-0.5,0.35,"#991b1b"],["horn","short",0.5,-0.5,0.35,"#991b1b"]]},
+  "cubone":{c:"#d6a15c",b:"#fde8c9",parts:[["skull","",0,-0.5,0.6,"#f8fafc"],["club","",0.55,0.35,0.6,"#b07d3f"]]},
+  "lickitung":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.3,"#f9a8d4"],["ear","round",0.5,-0.5,0.3,"#f9a8d4"],["tongue","",0,0.5,0.8,"#f472b6"]]},
+  "rhyhorn":{c:"#94a3b8",b:"#cbd5e1",body:"block",parts:[["horn","long",0,-0.55,0.8,"#64748b"],["ear","round",-0.5,-0.5,0.3,"#64748b"],["ear","round",0.5,-0.5,0.3,"#64748b"]]},
+  "rhydon":{c:"#7d8ea3",b:"#b8c4d0",body:"block",parts:[["horn","long",0,-0.6,1.0,"#556170"],["ear","round",-0.5,-0.5,0.35,"#556170"],["ear","round",0.5,-0.5,0.35,"#556170"]]},
+  "horsea":{c:"#60a5fa",b:"#dbeafe",body:"tall",parts:[["snout","",0,-0.6,0.35,"#93c5fd"],["fin","",0,0.3,0.4,"#3b82f6"]]},
+  "seadra":{c:"#38bdf8",b:"#e0f2fe",body:"tall",parts:[["snout","",0,-0.65,0.4,"#0ea5e9"],["fin","",0,0.3,0.5,"#0284c7"],["spike","",-0.4,-0.3,0.4,"#0284c7"],["spike","",0.4,-0.3,0.4,"#0284c7"]]},
+  "goldeen":{c:"#fbbf24",b:"#fef9c3",parts:[["horn","long",0,-0.55,0.5,"#f87171"],["fin","",0,-0.35,0.5,"#f59e0b"]]},
+  "electabuzz":{c:"#facc15",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.45,"#0f172a"],["ear","long",0.5,-0.5,0.45,"#0f172a"],["tail","lightning",0,0.75,0.6,"#fbbf24"]]},
+  "magmar":{c:"#f97316",b:"#ffedd5",parts:[["horn","short",-0.4,-0.5,0.4,"#ea580c"],["horn","short",0.4,-0.5,0.4,"#ea580c"],["tail","flame",0,0.8,0.7,"#ef4444"]]},
+  "tauros":{c:"#d6a15c",b:"#fde8c9",body:"block",parts:[["horn","curved",-0.4,-0.45,0.6,"#8a5a2b"],["horn","curved",0.4,-0.45,0.6,"#8a5a2b"],["tail","fluffy",0,0.8,0.5,"#c98a4b"]]},
+  "lapras":{c:"#60a5fa",b:"#dbeafe",parts:[["shell","",0,0.5,1.1,"#b45309"],["horn","short",-0.35,-0.6,0.35,"#3b82f6"],["horn","short",0.35,-0.6,0.35,"#3b82f6"]]},
+  "vaporeon":{c:"#3b82f6",b:"#dbeafe",parts:[["ear","long",-0.5,-0.5,0.5,"#2563eb"],["ear","long",0.5,-0.5,0.5,"#2563eb"],["fin","",0,-0.3,0.5,"#1d4ed8"],["tail","fluffy",0,0.8,0.5,"#60a5fa"]]},
+  "jolteon":{c:"#facc15",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.6,"#fbbf24"],["ear","long",0.5,-0.5,0.6,"#fbbf24"],["tail","lightning",0,0.8,0.6,"#fbbf24"]]},
+  "flareon":{c:"#f97316",b:"#ffedd5",parts:[["ear","long",-0.5,-0.5,0.55,"#f97316"],["ear","long",0.5,-0.5,0.55,"#f97316"],["tail","flame",0,0.85,0.7,"#ef4444"]]},
+  "porygon":{c:"#f9a8d4",b:"#fce7f3",body:"block",parts:[["bill","",0,0.1,0.35,"#f472b6"]]},
+  "omanyte":{c:"#7dd3fc",b:"#e0f2fe",parts:[["shell","",0,0.5,0.85,"#d6a15c"],["tentacle","",-0.55,0.3,0.5,"#38bdf8"],["tentacle","",0.55,0.3,0.5,"#38bdf8"]]},
+  "aerodactyl":{c:"#a78bfa",b:"#ede9fe",parts:[["wing","big",-0.7,0,0.95,"#7c3aed"],["wing","big",0.7,0,0.95,"#7c3aed"],["horn","short",-0.4,-0.55,0.4,"#6d28d9"],["horn","short",0.4,-0.55,0.4,"#6d28d9"]]},
+  "chikorita":{c:"#6ecb3c",b:"#d9f2c4",parts:[["leaf","",0,-0.55,0.5,"#16a34a"]]},
+  "bayleef":{c:"#5cb338",b:"#cdebb5",parts:[["leaf","",-0.4,-0.55,0.45,"#15803d"],["leaf","",0.4,-0.55,0.45,"#15803d"]]},
+  "meganium":{c:"#4c9b2f",b:"#b9e39c",parts:[["leaf","",-0.55,-0.55,0.55,"#166534"],["leaf","",0.55,-0.55,0.55,"#166534"],["leaf","",0,-0.7,0.4,"#15803d"]]},
+  "cyndaquil":{c:"#fbbf24",b:"#fef9c3",parts:[["tail","flame",0,0.7,0.6,"#f97316"]]},
+  "quilava":{c:"#fb923c",b:"#ffedd5",parts:[["tail","flame",0,0.75,0.7,"#ef4444"],["ear","round",-0.5,-0.5,0.3,"#c2410c"],["ear","round",0.5,-0.5,0.3,"#c2410c"]]},
+  "typhlosion":{c:"#ea580c",b:"#ffd8ad",parts:[["tail","flame",0,0.8,0.85,"#ef4444"],["ear","round",-0.5,-0.5,0.4,"#c2410c"],["ear","round",0.5,-0.5,0.4,"#c2410c"]]},
+  "totodile":{c:"#38bdf8",b:"#e0f2fe",parts:[["jaw","",0,0.35,0.5,"#0ea5e9"],["spike","",-0.4,-0.45,0.35,"#0284c7"],["spike","",0.4,-0.45,0.35,"#0284c7"]]},
+  "mareep":{c:"#f8fafc",b:"#f1f5f9",parts:[["ear","long",-0.5,-0.5,0.4,"#f8fafc"],["ear","long",0.5,-0.5,0.4,"#f8fafc"]]},
+  "flaaffy":{c:"#e2e8f0",b:"#f8fafc",parts:[["ear","long",-0.5,-0.5,0.4,"#e2e8f0"],["ear","long",0.5,-0.5,0.4,"#e2e8f0"],["coin","",0,0.05,0.2,"#fbbf24"]]},
+  "sudowoodo":{c:"#d6a15c",b:"#fde8c9",body:"tall",parts:[["arm","",-0.6,0.2,0.5,"#b07d3f"],["arm","",0.6,0.2,0.5,"#b07d3f"],["bud","",0,-0.6,0.4,"#4ade80"]]},
+  "aipom":{c:"#a78bfa",b:"#f3e8ff",parts:[["ear","round",-0.5,-0.5,0.3,"#a78bfa"],["ear","round",0.5,-0.5,0.3,"#a78bfa"],["tail","whip",0,0.8,0.6,"#a78bfa"]]},
+  "wooper":{c:"#38bdf8",b:"#e0f2fe",parts:[["tail","curl",0,0.7,0.5,"#38bdf8"]]},
+  "murkrow":{c:"#334155",b:"#94a3b8",parts:[["wing","small",-0.7,0,0.6,"#0f172a"],["wing","small",0.7,0,0.6,"#0f172a"],["bill","",0,0.1,0.3,"#fbbf24"]]},
+  "misdreavus":{c:"#a78bfa",b:"#f3e8ff",parts:[["curl","",-0.5,-0.4,0.35,"#7c3aed"],["curl","",0.5,-0.4,0.35,"#7c3aed"],["crest","crown",0,-0.6,0.35,"#e879f9"]]},
+  "girafarig":{c:"#fbbf24",b:"#fef9c3",body:"tall",parts:[["horn","short",-0.4,-0.55,0.4,"#b45309"],["horn","short",0.4,-0.55,0.4,"#b45309"],["tail","fluffy",0,0.8,0.5,"#f59e0b"]]},
+  "pineco":{c:"#b07d3f",b:"#e8d0a8",parts:[["ear","round",-0.5,-0.5,0.3,"#8a5a2b"],["ear","round",0.5,-0.5,0.3,"#8a5a2b"]]},
+  "gligar":{c:"#a78bfa",b:"#ede9fe",parts:[["wing","big",-0.7,0,0.8,"#7c3aed"],["wing","big",0.7,0,0.8,"#7c3aed"],["claw","",-0.6,0.35,0.5,"#a78bfa"],["claw","",0.6,0.35,0.5,"#a78bfa"]]},
+  "sneasel":{c:"#38bdf8",b:"#e0f2fe",parts:[["ear","long",-0.5,-0.5,0.5,"#ef4444"],["ear","long",0.5,-0.5,0.5,"#ef4444"],["cheek","",-0.4,0.15,0.18,"#ef4444"],["cheek","",0.4,0.15,0.18,"#ef4444"]]},
+  "teddiursa":{c:"#d6a15c",b:"#fde8c9",parts:[["ear","round",-0.5,-0.5,0.4,"#d6a15c"],["ear","round",0.5,-0.5,0.4,"#d6a15c"]]},
+  "ursaring":{c:"#c98a4b",b:"#fbe8c8",parts:[["ear","round",-0.5,-0.5,0.45,"#c98a4b"],["ear","round",0.5,-0.5,0.45,"#c98a4b"],["claw","",-0.55,0.35,0.4,"#8a5a2b"],["claw","",0.55,0.35,0.4,"#8a5a2b"]]},
+  "houndour":{c:"#57534e",b:"#a8a29e",parts:[["horn","short",-0.4,-0.5,0.4,"#292524"],["horn","short",0.4,-0.5,0.4,"#292524"],["ear","round",-0.5,-0.4,0.3,"#57534e"],["ear","round",0.5,-0.4,0.3,"#57534e"]]},
+  "houndoom":{c:"#292524",b:"#78716c",parts:[["horn","long",-0.4,-0.55,0.7,"#fbbf24"],["horn","long",0.4,-0.55,0.7,"#fbbf24"],["tail","flame",0,0.85,0.7,"#f97316"]]},
+  "phanpy":{c:"#7dd3fc",b:"#e0f2fe",parts:[["ear","round",-0.5,-0.5,0.55,"#38bdf8"],["ear","round",0.5,-0.5,0.55,"#38bdf8"],["snout","",0,0.15,0.3,"#0ea5e9"]]},
+  "donphan":{c:"#94a3b8",b:"#cbd5e1",body:"block",parts:[["ear","round",-0.5,-0.5,0.45,"#64748b"],["ear","round",0.5,-0.5,0.45,"#64748b"],["snout","",0,0.1,0.35,"#475569"]]},
+  "stantler":{c:"#d6a15c",b:"#fde8c9",parts:[["horn","antler",-0.35,-0.55,0.6,"#8a5a2b"],["horn","antler",0.35,-0.55,0.6,"#8a5a2b"]]},
+  "smeargle":{c:"#e8e0d0",b:"#f8f2e6",parts:[["ear","round",-0.5,-0.5,0.3,"#c98a4b"],["ear","round",0.5,-0.5,0.3,"#c98a4b"],["tail","whip",0,0.8,0.5,"#e8e0d0"]]},
+  "miltank":{c:"#f8fafc",b:"#f8fafc",parts:[["horn","short",-0.4,-0.55,0.35,"#f472b6"],["horn","short",0.4,-0.55,0.35,"#f472b6"],["tail","fluffy",0,0.8,0.5,"#f9a8d4"]]},
+  "larvitar":{c:"#4ade80",b:"#dcfce7",parts:[["spike","",-0.4,-0.45,0.4,"#166534"],["spike","",0.4,-0.45,0.4,"#166534"]]},
+  "pupitar":{c:"#94a3b8",b:"#cbd5e1",body:"block",parts:[["spike","",-0.4,-0.45,0.4,"#64748b"],["spike","",0.4,-0.45,0.4,"#64748b"],["crystal","",0,-0.5,0.3,"#ef4444"]]},
+  "tyranitar":{c:"#16a34a",b:"#dcfce7",body:"block",parts:[["spike","",-0.5,-0.45,0.6,"#14532d"],["spike","",0.5,-0.45,0.6,"#14532d"],["horn","short",-0.45,-0.6,0.5,"#14532d"],["horn","short",0.45,-0.6,0.5,"#14532d"]]},
+  "treecko":{c:"#4ade80",b:"#dcfce7",parts:[["tail","whip",0,0.8,0.6,"#22c55e"]]},
+  "grovyle":{c:"#22c55e",b:"#dcfce7",parts:[["tail","whip",0,0.85,0.7,"#15803d"],["bud","",0,-0.55,0.4,"#f97316"]]},
+  "sceptile":{c:"#16a34a",b:"#dcfce7",parts:[["tail","whip",0,0.9,0.8,"#166534"],["bud","",0,-0.6,0.5,"#ef4444"]]},
+  "torchic":{c:"#fb923c",b:"#ffedd5",parts:[["bill","",0,0.15,0.25,"#f59e0b"],["tail","fluffy",0,0.6,0.4,"#fbbf24"]]},
+  "combusken":{c:"#f97316",b:"#ffedd5",parts:[["crest","crown",0,-0.55,0.5,"#ef4444"],["wing","small",-0.7,0,0.5,"#f97316"],["wing","small",0.7,0,0.5,"#f97316"]]},
+  "blaziken":{c:"#ef4444",b:"#fee2e2",parts:[["crest","crown",0,-0.6,0.6,"#b91c1c"],["wing","small",-0.7,0,0.6,"#f97316"],["wing","small",0.7,0,0.6,"#f97316"],["tail","flame",0,0.8,0.7,"#fbbf24"]]},
+  "mudkip":{c:"#38bdf8",b:"#e0f2fe",parts:[["fin","",0,-0.55,0.5,"#2563eb"]]},
+  "marshtomp":{c:"#3b82f6",b:"#dbeafe",parts:[["fin","",0,-0.6,0.55,"#1d4ed8"],["tail","fluffy",0,0.75,0.5,"#2563eb"]]},
+  "swampert":{c:"#2563eb",b:"#dbeafe",parts:[["fin","",0,-0.65,0.6,"#1e40af"],["tail","fluffy",0,0.85,0.6,"#1d4ed8"]]},
+  "poochyena":{c:"#78716c",b:"#d6d3d1",parts:[["ear","long",-0.5,-0.5,0.5,"#292524"],["ear","long",0.5,-0.5,0.5,"#292524"],["tail","fluffy",0,0.7,0.5,"#78716c"]]},
+  "mightyena":{c:"#57534e",b:"#a8a29e",parts:[["ear","long",-0.5,-0.5,0.6,"#1c1917"],["ear","long",0.5,-0.5,0.6,"#1c1917"],["tail","fluffy",0,0.8,0.6,"#44403c"]]},
+  "zigzagoon":{c:"#d6a15c",b:"#fde8c9",parts:[["ear","long",-0.5,-0.5,0.45,"#8a5a2b"],["ear","long",0.5,-0.5,0.45,"#8a5a2b"],["tail","fluffy",0,0.7,0.5,"#c98a4b"]]},
+  "linoone":{c:"#c9a86a",b:"#f5e8d0",body:"oval",parts:[["ear","long",-0.5,-0.5,0.5,"#8a5a2b"],["ear","long",0.5,-0.5,0.5,"#8a5a2b"],["tail","fluffy",0,0.8,0.55,"#b07d3f"]]},
+  "wurmple":{c:"#f472b6",b:"#fce7f3",body:"snake",parts:[["horn","short",-0.35,-0.45,0.4,"#f472b6"],["horn","short",0.35,-0.45,0.4,"#f472b6"]]},
+  "silcoon":{c:"#e8e0d0",b:"#f8f2e6",body:"oval",parts:[]},
+  "cascoon":{c:"#cbd5e1",b:"#e2e8f0",body:"oval",parts:[]},
+  "beautifly":{c:"#f472b6",b:"#fce7f3",parts:[["wing","big",-0.75,0,0.8,"#f9a8d4"],["wing","big",0.75,0,0.8,"#f9a8d4"],["antenna","",-0.3,-0.55,0.5,"#ec4899"],["antenna","",0.3,-0.55,0.5,"#ec4899"]]},
+  "dustox":{c:"#94a3b8",b:"#e2e8f0",parts:[["wing","big",-0.75,0,0.8,"#64748b"],["wing","big",0.75,0,0.8,"#64748b"],["antenna","",-0.3,-0.55,0.5,"#ef4444"],["antenna","",0.3,-0.55,0.5,"#ef4444"]]},
+  "ralts":{c:"#4ade80",b:"#dcfce7",parts:[["crest","crown",0,-0.55,0.45,"#22c55e"]]},
+  "kirlia":{c:"#f8fafc",b:"#f8fafc",parts:[["crest","crown",0,-0.55,0.5,"#ef4444"],["wing","small",-0.7,0,0.45,"#f9a8d4"],["wing","small",0.7,0,0.45,"#f9a8d4"]]},
+  "gardevoir":{c:"#4ade80",b:"#dcfce7",parts:[["crest","crown",0,-0.6,0.6,"#ef4444"],["wing","small",-0.8,0,0.55,"#f9a8d4"],["wing","small",0.8,0,0.55,"#f9a8d4"]]},
+  "shroomish":{c:"#f472b6",b:"#fce7f3",parts:[["dot","",-0.35,-0.2,0.2,"#f8fafc"],["dot","",0.35,-0.2,0.2,"#f8fafc"]]},
+  "breloom":{c:"#4ade80",b:"#dcfce7",parts:[["claw","",-0.55,0.3,0.5,"#22c55e"],["claw","",0.55,0.3,0.5,"#22c55e"],["bud","",0,-0.5,0.45,"#f97316"]]},
+  "slakoth":{c:"#d6a15c",b:"#fde8c9",parts:[["ear","round",-0.5,-0.5,0.35,"#c98a4b"],["ear","round",0.5,-0.5,0.35,"#c98a4b"]]},
+  "vigoroth":{c:"#f8fafc",b:"#f8fafc",parts:[["ear","round",-0.5,-0.5,0.35,"#f8fafc"],["ear","round",0.5,-0.5,0.35,"#f8fafc"],["band","",0,-0.4,0.85,"#b91c1c"]]},
+  "slaking":{c:"#d6a15c",b:"#fde8c9",body:"block",parts:[["ear","round",-0.5,-0.5,0.4,"#c98a4b"],["ear","round",0.5,-0.5,0.4,"#c98a4b"],["band","",0,-0.4,0.9,"#b91c1c"]]},
+  "nincada":{c:"#d6a15c",b:"#fde8c9",parts:[["ear","round",-0.5,-0.5,0.3,"#b07d3f"],["ear","round",0.5,-0.5,0.3,"#b07d3f"]]},
+  "ninjask":{c:"#f59e0b",b:"#fef3c7",parts:[["wing","big",-0.75,0,0.7,"#dbeafe"],["wing","big",0.75,0,0.7,"#dbeafe"]]},
+  "whismur":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.35,"#f9a8d4"],["ear","round",0.5,-0.5,0.35,"#f9a8d4"]]},
+  "makuhita":{c:"#fbbf24",b:"#fef3c7",body:"block",parts:[["band","",0,-0.4,0.9,"#ef4444"]]},
+  "hariyama":{c:"#f59e0b",b:"#fef3c7",body:"block",parts:[["band","",0,-0.4,1.0,"#ef4444"],["ear","round",-0.5,-0.5,0.3,"#d97706"],["ear","round",0.5,-0.5,0.3,"#d97706"]]},
+  "nosepass":{c:"#94a3b8",b:"#cbd5e1",body:"block",parts:[["nose","",0,0.05,0.45,"#ef4444"]]},
+  "skitty":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","long",-0.5,-0.5,0.4,"#f9a8d4"],["ear","long",0.5,-0.5,0.4,"#f9a8d4"],["tail","fluffy",0,0.7,0.5,"#f9a8d4"]]},
+  "delcatty":{c:"#f8fafc",b:"#f8fafc",parts:[["ear","long",-0.5,-0.5,0.4,"#f8fafc"],["ear","long",0.5,-0.5,0.4,"#f8fafc"],["tail","fluffy",0,0.75,0.55,"#f8fafc"]]},
+  "meditite":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.3,"#f9a8d4"],["ear","round",0.5,-0.5,0.3,"#f9a8d4"]]},
+  "medicham":{c:"#f0abfc",b:"#fdf4ff",parts:[["ear","round",-0.5,-0.5,0.35,"#f0abfc"],["ear","round",0.5,-0.5,0.35,"#f0abfc"],["crest","crown",0,-0.55,0.4,"#e879f9"]]},
+  "electrike":{c:"#4ade80",b:"#dcfce7",parts:[["ear","long",-0.5,-0.5,0.5,"#16a34a"],["ear","long",0.5,-0.5,0.5,"#16a34a"],["tail","lightning",0,0.7,0.5,"#fbbf24"]]},
+  "manectric":{c:"#38bdf8",b:"#e0f2fe",parts:[["ear","long",-0.5,-0.5,0.6,"#facc15"],["ear","long",0.5,-0.5,0.6,"#facc15"],["tail","lightning",0,0.8,0.6,"#fbbf24"]]},
+  "plusle":{c:"#fbbf24",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.5,"#f87171"],["ear","long",0.5,-0.5,0.5,"#f87171"],["cheek","",-0.4,0.15,0.2,"#ef4444"],["cheek","",0.4,0.15,0.2,"#ef4444"]]},
+  "minun":{c:"#fbbf24",b:"#fef9c3",parts:[["ear","long",-0.5,-0.5,0.5,"#38bdf8"],["ear","long",0.5,-0.5,0.5,"#38bdf8"],["cheek","",-0.4,0.15,0.2,"#ef4444"],["cheek","",0.4,0.15,0.2,"#ef4444"]]},
+  "roselia":{c:"#4ade80",b:"#dcfce7",parts:[["bud","",0,-0.55,0.5,"#f472b6"],["leaf","",-0.5,-0.3,0.4,"#16a34a"],["leaf","",0.5,-0.3,0.4,"#16a34a"]]},
+  "gulpin":{c:"#4ade80",b:"#dcfce7",parts:[["ear","round",-0.5,-0.5,0.3,"#22c55e"],["ear","round",0.5,-0.5,0.3,"#22c55e"]]},
+  "swalot":{c:"#a78bfa",b:"#f3e8ff",body:"block",parts:[["ear","round",-0.5,-0.5,0.4,"#7c3aed"],["ear","round",0.5,-0.5,0.4,"#7c3aed"]]},
+  "carvanha":{c:"#3b82f6",b:"#dbeafe",parts:[["fin","",0,-0.45,0.5,"#1d4ed8"],["jaw","",0,0.35,0.5,"#1e40af"]]},
+  "sharpedo":{c:"#2563eb",b:"#dbeafe",parts:[["fin","",0,-0.5,0.6,"#1e40af"],["jaw","",0,0.4,0.6,"#1e40af"]]},
+  "wailmer":{c:"#3b82f6",b:"#dbeafe",parts:[["fin","",0,-0.4,0.5,"#1d4ed8"],["nose","",0,0.3,0.2,"#1e40af"]]},
+  "wailord":{c:"#60a5fa",b:"#dbeafe",body:"block",parts:[["fin","",0,-0.5,0.6,"#2563eb"],["nose","",0,0.35,0.25,"#1d4ed8"]]},
+  "numel":{c:"#f59e0b",b:"#fef3c7",body:"block",parts:[["horn","short",0,-0.5,0.4,"#b45309"],["nose","",0,0.15,0.3,"#b45309"]]},
+  "camerupt":{c:"#ef4444",b:"#fee2e2",body:"block",parts:[["horn","short",-0.45,-0.55,0.4,"#991b1b"],["horn","short",0.45,-0.55,0.4,"#991b1b"],["hump","",0,0.2,0.6,"#dc2626"]]},
+  "torkoal":{c:"#d6a15c",b:"#fde8c9",body:"block",parts:[["shell","",0,0.4,0.9,"#8a5a2b"]]},
+  "spoink":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.4,"#f9a8d4"],["ear","round",0.5,-0.5,0.4,"#f9a8d4"],["coin","",0,0.05,0.3,"#f472b6"]]},
+  "grumpig":{c:"#f0abfc",b:"#fdf4ff",parts:[["ear","round",-0.5,-0.5,0.5,"#f0abfc"],["ear","round",0.5,-0.5,0.5,"#f0abfc"],["coin","",0,0.05,0.35,"#ec4899"]]},
+  "spinda":{c:"#f9a8d4",b:"#fce7f3",parts:[["ear","round",-0.5,-0.5,0.4,"#f9a8d4"],["ear","round",0.5,-0.5,0.4,"#f9a8d4"],["dot","",-0.4,-0.25,0.22,"#1e293b"],["dot","",0.4,-0.25,0.22,"#1e293b"]]},
+  "trapinch":{c:"#ef4444",b:"#fee2e2",parts:[["jaw","",0,0.35,0.6,"#b91c1c"],["claw","",-0.55,0.35,0.4,"#ef4444"],["claw","",0.55,0.35,0.4,"#ef4444"]]},
+  "vibrava":{c:"#16a34a",b:"#dcfce7",parts:[["wing","big",-0.75,0,0.7,"#86efac"],["wing","big",0.75,0,0.7,"#86efac"]]},
+  "flygon":{c:"#22c55e",b:"#dcfce7",parts:[["wing","big",-0.8,0,0.8,"#4ade80"],["wing","big",0.8,0,0.8,"#4ade80"],["antenna","",-0.3,-0.6,0.5,"#15803d"],["antenna","",0.3,-0.6,0.5,"#15803d"]]},
+  "cacnea":{c:"#4ade80",b:"#dcfce7",body:"tall",parts:[["spike","",-0.5,-0.3,0.5,"#22c55e"],["spike","",0.5,-0.3,0.5,"#22c55e"],["arm","",-0.55,0.25,0.45,"#22c55e"],["arm","",0.55,0.25,0.45,"#22c55e"]]},
+  "cacturne":{c:"#22c55e",b:"#dcfce7",body:"tall",parts:[["spike","",-0.6,-0.3,0.6,"#15803d"],["spike","",0.6,-0.3,0.6,"#15803d"],["crest","crown",0,-0.55,0.5,"#ef4444"],["arm","",-0.6,0.25,0.5,"#15803d"],["arm","",0.6,0.25,0.5,"#15803d"]]},
+  "swablu":{c:"#7dd3fc",b:"#e0f2fe",parts:[["wing","small",-0.75,0,0.5,"#f8fafc"],["wing","small",0.75,0,0.5,"#f8fafc"],["crest","crown",0,-0.55,0.35,"#7dd3fc"]]},
+  "zangoose":{c:"#f8fafc",b:"#f8fafc",parts:[["ear","long",-0.5,-0.5,0.45,"#f472b6"],["ear","long",0.5,-0.5,0.45,"#f472b6"],["claw","",-0.55,0.35,0.5,"#94a3b8"],["claw","",0.55,0.35,0.5,"#94a3b8"]]},
+  "seviper":{c:"#57534e",b:"#a8a29e",body:"snake",parts:[["crest","crown",0,-0.35,0.4,"#ef4444"],["tail","curl",0,0.65,0.5,"#ef4444"]]},
+  "lunatone":{c:"#cbd5e1",b:"#e2e8f0",body:"crescent",parts:[["crystal","",0,-0.4,0.3,"#ef4444"]]},
+  "solrock":{c:"#f59e0b",b:"#fef3c7",body:"star5",parts:[["crystal","",0,-0.4,0.35,"#f87171"]]},
+  "barboach":{c:"#38bdf8",b:"#e0f2fe",body:"oval",parts:[["whisker","",-0.45,0.35,0.5,"#0ea5e9"],["whisker","",0.45,0.35,0.5,"#0ea5e9"]]},
+  "whiscash":{c:"#3b82f6",b:"#dbeafe",body:"oval",parts:[["whisker","",-0.55,0.35,0.6,"#1d4ed8"],["whisker","",0.55,0.35,0.6,"#1d4ed8"],["fin","",0,-0.4,0.5,"#2563eb"]]},
+  "corphish":{c:"#ef4444",b:"#fee2e2",parts:[["claw","",-0.6,0.1,0.6,"#dc2626"],["claw","",0.6,0.1,0.6,"#dc2626"]]},
+  "crawdaunt":{c:"#dc2626",b:"#fecaca",parts:[["claw","",-0.75,0.1,0.85,"#b91c1c"],["claw","",0.75,0.1,0.85,"#b91c1c"],["horn","short",-0.4,-0.55,0.4,"#991b1b"],["horn","short",0.4,-0.55,0.4,"#991b1b"]]},
+  "baltoy":{c:"#d6a15c",b:"#fde8c9",body:"block",parts:[["eye","red",0,-0.2,0.2,"#0f172a"]]},
+  "claydol":{c:"#d6a15c",b:"#fde8c9",body:"block",parts:[["eye","red",-0.3,-0.15,0.18,"#0f172a"],["eye","red",0.3,-0.15,0.18,"#0f172a"]]},
+  "lileep":{c:"#a3e635",b:"#ecfccb",body:"tall",parts:[["tentacle","",-0.5,0.3,0.6,"#4ade80"],["tentacle","",0.5,0.3,0.6,"#4ade80"]]},
+  "cradily":{c:"#86efac",b:"#dcfce7",body:"tall",parts:[["tentacle","",-0.6,0.3,0.7,"#22c55e"],["tentacle","",0.6,0.3,0.7,"#22c55e"],["crest","crown",0,-0.55,0.5,"#16a34a"]]},
+  "anorith":{c:"#f472b6",b:"#fce7f3",parts:[["claw","",-0.55,0.2,0.6,"#f9a8d4"],["claw","",0.55,0.2,0.6,"#f9a8d4"]]},
+  "armaldo":{c:"#f59e0b",b:"#fef3c7",parts:[["claw","",-0.65,0.2,0.7,"#d97706"],["claw","",0.65,0.2,0.7,"#d97706"],["horn","short",-0.4,-0.55,0.4,"#b45309"],["horn","short",0.4,-0.55,0.4,"#b45309"]]},
+  "feebas":{c:"#94a3b8",b:"#cbd5e1",body:"snake",parts:[["fin","",0,-0.35,0.4,"#64748b"]]},
+  "milotic":{c:"#f9a8d4",b:"#fce7f3",body:"snake",parts:[["crest","crown",0,-0.45,0.5,"#f0abfc"],["tail","fluffy",0,0.7,0.7,"#ec4899"]]},
+  "castform":{c:"#e2e8f0",b:"#f8fafc",parts:[["dot","",-0.35,-0.2,0.2,"#94a3b8"],["dot","",0.35,-0.2,0.2,"#94a3b8"]]},
+  "kecleon":{c:"#4ade80",b:"#dcfce7",parts:[["ear","round",-0.5,-0.5,0.35,"#22c55e"],["ear","round",0.5,-0.5,0.35,"#22c55e"],["curl","",0,-0.6,0.4,"#ef4444"]]},
+  "shuppet":{c:"#94a3b8",b:"#cbd5e1",parts:[["crest","crown",0,-0.55,0.5,"#475569"]]},
+  "banette":{c:"#64748b",b:"#cbd5e1",parts:[["crest","crown",0,-0.6,0.6,"#1e293b"],["ear","point",-0.5,-0.5,0.4,"#334155"],["ear","point",0.5,-0.5,0.4,"#334155"]]},
+  "duskull":{c:"#334155",b:"#94a3b8",parts:[["eye","red",0,-0.2,0.35,"#f87171"]]},
+  "dusclops":{c:"#1e293b",b:"#64748b",parts:[["eye","red",0,-0.2,0.45,"#ef4444"],["horn","short",-0.45,-0.55,0.4,"#0f172a"],["horn","short",0.45,-0.55,0.4,"#0f172a"]]},
+  "tropius":{c:"#4ade80",b:"#dcfce7",parts:[["leaf","",-0.6,-0.3,0.6,"#22c55e"],["leaf","",0.6,-0.3,0.6,"#22c55e"],["horn","short",0,-0.6,0.5,"#fbbf24"]]},
+  "chimecho":{c:"#3b82f6",b:"#dbeafe",parts:[["tail","whip",0,0.8,0.6,"#3b82f6"]]},
+  "snorunt":{c:"#94a3b8",b:"#cbd5e1",parts:[["crest","crown",0,-0.5,0.4,"#64748b"]]},
+  "glalie":{c:"#7dd3fc",b:"#e0f2fe",body:"block",parts:[["crystal","",0,-0.45,0.4,"#a5f3fc"]]},
+  "spheal":{c:"#3b82f6",b:"#dbeafe",parts:[["ear","round",-0.5,-0.5,0.35,"#1d4ed8"],["ear","round",0.5,-0.5,0.35,"#1d4ed8"]]},
+  "sealeo":{c:"#60a5fa",b:"#dbeafe",parts:[["ear","round",-0.5,-0.5,0.4,"#2563eb"],["ear","round",0.5,-0.5,0.4,"#2563eb"],["nose","",0,0.15,0.2,"#1d4ed8"]]},
+  "walrein":{c:"#38bdf8",b:"#e0f2fe",body:"block",parts:[["horn","long",-0.45,-0.55,0.6,"#f8fafc"],["horn","long",0.45,-0.55,0.6,"#f8fafc"]]},
+  "clamperl":{c:"#3b82f6",b:"#dbeafe",body:"oval",parts:[["shell","",0,0.3,0.8,"#f8fafc"]]},
+  "huntail":{c:"#38bdf8",b:"#e0f2fe",body:"snake",parts:[["jaw","",0,0.3,0.5,"#0284c7"]]},
+  "gorebyss":{c:"#f9a8d4",b:"#fce7f3",body:"snake",parts:[["snout","",0,-0.55,0.4,"#f0abfc"]]},
+  "relicanth":{c:"#f59e0b",b:"#fef3c7",body:"block",parts:[["fin","",0,-0.45,0.5,"#d97706"]]},
+  "luvdisc":{c:"#f472b6",b:"#fce7f3",parts:[["tail","fluffy",0,0.75,0.4,"#ec4899"]]},
+  "bagon":{c:"#3b82f6",b:"#dbeafe",parts:[["horn","short",-0.4,-0.5,0.4,"#1d4ed8"],["horn","short",0.4,-0.5,0.4,"#1d4ed8"]]},
+  "shelgon":{c:"#f8fafc",b:"#f8fafc",body:"block",parts:[["horn","short",-0.45,-0.5,0.45,"#cbd5e1"],["horn","short",0.45,-0.5,0.45,"#cbd5e1"]]},
+  "beldum":{c:"#94a3b8",b:"#cbd5e1",body:"block",parts:[["eye","red",0,-0.2,0.25,"#ef4444"]]},
+  "metang":{c:"#64748b",b:"#cbd5e1",body:"block",parts:[["claw","",-0.6,0.15,0.5,"#475569"],["claw","",0.6,0.15,0.5,"#475569"],["eye","red",0,-0.2,0.3,"#ef4444"]]},
+  "metagross":{c:"#3b82f6",b:"#dbeafe",body:"block",parts:[["claw","",-0.7,0.15,0.6,"#1d4ed8"],["claw","",0.7,0.15,0.6,"#1d4ed8"],["eye","red",0,-0.2,0.35,"#ef4444"]]},
+
   pichu:{c:"#facc15",b:"#fff7cc",parts:[["ear","long",-0.55,-0.5,0.5,"#0f172a"],["ear","long",0.55,-0.5,0.5,"#0f172a"],["tail","lightning",0,-0.2,0.9,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
   pikachu:{c:"#facc15",b:"#fff7cc",parts:[["ear","long",-0.55,-0.5,0.55,"#0f172a"],["ear","long",0.55,-0.5,0.55,"#0f172a"],["tail","lightning",0,-0.2,0.9,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
   raichu:{c:"#f59e0b",b:"#fef3c7",parts:[["ear","long",-0.55,-0.5,0.55,"#d97706"],["ear","long",0.55,-0.5,0.55,"#d97706"],["tail","lightning",0,-0.2,0.95,"#fbbf24"],["cheek","",-0.45,0.12,0.22,"#f87171"],["cheek","",0.45,0.12,0.22,"#f87171"]]},
@@ -4065,6 +4435,57 @@ function qPart(kind,sub,dx,dy,s,c,R,C){
   else if(kind==="belly"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y+S*0.45,S*0.55,S*0.42,0,0,6.28); C.fill(); }
   else if(kind==="band"){ C.fillStyle=c; C.fillRect(X-S*0.9,Y-S*0.28,S*1.8,S*0.22); }
   else if(kind==="eye"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y-S*0.18,S*0.5,0,6.28); C.fill(); }
+  else if(kind==="magnet"){ C.strokeStyle=c; C.lineWidth=S*0.28; C.lineCap="round"; C.beginPath(); C.arc(X,Y+S*0.2,S*0.35,Math.PI,0); C.stroke();
+    C.fillStyle=c; C.fillRect(X-S*0.35,Y-S*0.15,S*0.7,S*0.3); }
+  else if(kind==="arm"){ C.strokeStyle=c; C.lineWidth=S*0.3; C.lineCap="round"; C.beginPath(); C.moveTo(X,Y); C.lineTo(X-S*0.9,Y+S*0.3); C.stroke(); }
+  else if(kind==="claw"){ C.strokeStyle=c; C.lineWidth=S*0.22; C.lineCap="round"; C.beginPath(); C.moveTo(X,Y); C.lineTo(X-S*0.7,Y+S*0.15); C.stroke();
+    C.beginPath(); C.moveTo(X-S*0.55,Y+S*0.35); C.lineTo(X-S*1.0,Y+S*0.2); C.stroke(); }
+  else if(kind==="leaf"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y-S*0.1,S*0.5,S*0.22,0.5,0,6.28); C.fill(); }
+  else if(kind==="egg"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y,S*0.45,S*0.55,0,0,6.28); C.fill(); }
+  else if(kind==="skull"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y,S*0.45,0,6.28); C.fill();
+    C.fillStyle="#0f172a"; C.beginPath(); C.arc(X-S*0.2,Y,S*0.09,0,6.28); C.arc(X+S*0.2,Y,S*0.09,0,6.28); C.fill(); }
+  else if(kind==="club"){ C.strokeStyle=c; C.lineWidth=S*0.16; C.beginPath(); C.moveTo(X,Y); C.lineTo(X+S*0.8,Y-S*0.5); C.stroke();
+    C.fillStyle=c; C.beginPath(); C.ellipse(X+S*0.8,Y-S*0.5,S*0.35,S*0.5,0.5,0,6.28); C.fill(); }
+  else if(kind==="tongue"){ C.fillStyle=c; C.beginPath(); C.ellipse(X,Y+S*0.4,S*0.5,S*0.22,0,0,6.28); C.fill(); }
+  else if(kind==="snout"){ C.beginPath(); C.moveTo(X-S*0.3,Y); C.lineTo(X-S*0.35,Y-S*0.7); C.lineTo(X+S*0.35,Y-S*0.7); C.lineTo(X+S*0.3,Y); C.closePath(); C.fill(); }
+  else if(kind==="nose"){ C.beginPath(); C.ellipse(X,Y,S*0.5,S*0.6,0,0,6.28); C.fill(); }
+  else if(kind==="jaw"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y+S*0.35,S*0.55,Math.PI,0); C.fill(); }
+  else if(kind==="hump"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y-S*0.1,S*0.6,Math.PI,0); C.fill(); }
+  else if(kind==="dot"){ C.fillStyle=c; C.beginPath(); C.arc(X,Y,S*0.5,0,6.28); C.fill(); }
+}
+const Q_CACHE={};
+function qHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h; }
+function drawShinyFx(C,x,y,r){   // 闪光：金色星芒 + 粒子光环
+  const t=Date.now()/1000;
+  C.save(); C.translate(x,y);
+  for(let k=0;k<6;k++){
+    const a=t*1.4+k*1.047;
+    const rr=r*0.78+Math.sin(t*3+k)*3;
+    C.strokeStyle="rgba(250,204,21,"+(0.5+0.4*Math.sin(t*5+k))+")"; C.lineWidth=2;
+    C.beginPath();
+    C.moveTo(Math.cos(a)*rr*0.72,Math.sin(a)*rr*0.72);
+    C.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);
+    C.stroke();
+  }
+  C.fillStyle="rgba(253,224,71,.85)";
+  for(let k=0;k<5;k++){ const a=t*2.2+k*1.26; C.beginPath(); C.arc(Math.cos(a)*r*1.15,Math.sin(a)*r*1.15,2.4,0,6.28); C.fill(); }
+  C.restore();
+}
+function drawBodyShape(C,bodyVar,R,bodyC){
+  C.fillStyle=bodyC;
+  if(bodyVar==="snake"){ C.beginPath(); C.ellipse(0,R*0.15,R*0.85,R*0.4,0,0,6.28); C.fill();
+    C.beginPath(); C.arc(0,-R*0.18,R*0.55,0,6.28); C.fill(); }
+  else if(bodyVar==="oval"){ C.beginPath(); C.ellipse(0,R*0.1,R*0.45,R*0.65,0,0,6.28); C.fill();
+    C.beginPath(); C.arc(0,-R*0.22,R*0.55,0,6.28); C.fill(); }
+  else if(bodyVar==="block"){ C.beginPath(); C.roundRect(-R*0.6,-R*0.55,R*1.2,R*1.05,R*0.25); C.fill();
+    C.beginPath(); C.arc(0,-R*0.2,R*0.5,0,6.28); C.fill(); }
+  else if(bodyVar==="tall"){ C.beginPath(); C.ellipse(0,R*0.05,R*0.42,R*0.72,0,0,6.28); C.fill();
+    C.beginPath(); C.arc(0,-R*0.32,R*0.55,0,6.28); C.fill(); }
+  else if(bodyVar==="star5"){ for(let k=0;k<5;k++){ const a=-1.57+k*1.256; C.beginPath(); C.arc(Math.cos(a)*R*0.7,Math.sin(a)*R*0.7,R*0.42,0,6.28); C.fill(); }
+    C.beginPath(); C.arc(0,0,R*0.5,0,6.28); C.fill(); }
+  else if(bodyVar==="crescent"){ C.beginPath(); C.arc(0,0,R*0.6,1.1,5.6); C.arc(R*0.3,0,R*0.5,4.1,5.4,true); C.closePath(); C.fill(); }
+  else { C.beginPath(); C.ellipse(0,R*0.3,R*0.6,R*0.5,0,0,6.28); C.fill();
+    C.beginPath(); C.arc(0,-R*0.08,R*0.7,0,6.28); C.fill(); }
 }
 function drawQ(id,x,y,r,rot,form,ctx){
   const C=ctx||CTX;
@@ -4072,22 +4493,31 @@ function drawQ(id,x,y,r,rot,form,ctx){
   const attr = R0?R0.attr : (Q_ATTR_IDS[id]? id : "normal");
   const T=ATTR_TEXT[attr]||ATTR_TEXT.normal;
   const F=Q_FEAT[id]||Q_FEAT["__"+attr]||null;
-  const bodyC = F?F.c : T.color;
-  const bellyC = (F&&F.b)?F.b : "rgba(255,255,255,.85)";
-  const R=r*(form>=3?1.22:(form>=2?1.08:0.9));
+  const bucket = r<18?16: r<30?28: r<48?44: r<70?64: 88;
+  const key = id+"|"+(form||1)+"|"+bucket;
+  let cv=Q_CACHE[key];
+  if(!cv){
+    cv=document.createElement("canvas"); cv.width=cv.height=bucket*2;
+    const C2=cv.getContext("2d");
+    const R=bucket*0.52*(form>=3?1.22:(form>=2?1.08:0.9));
+    const bodyC = F?F.c : T.color;
+    const bellyC = (F&&F.b)?F.b : "rgba(255,255,255,.85)";
+    const bodyVar = F?(F.body||"round") : ("__"+attr in Q_FEAT ? ["round","oval","block","tall","star5"][qHash(id)%5] : "round");  // 兜底：按 id 哈希选体型，同属性精灵不再长得一样
+    if(F&&F.parts) for(const pt of F.parts){ if(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing") qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C2); }
+    drawBodyShape(C2,bodyVar,R,bodyC);
+    C2.fillStyle=bellyC;
+    if(bodyVar==="snake") C2.beginPath(); else C2.beginPath(); C2.ellipse(0,R*0.45,R*0.34,R*0.24,0,0,6.28); C2.fill();
+    if(F&&F.parts) for(const pt of F.parts){ if(!(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing")) qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C2); }
+    C2.fillStyle="#fff"; C2.beginPath(); C2.ellipse(-R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C2.ellipse(R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C2.fill();
+    C2.fillStyle="#0f172a"; C2.beginPath(); C2.arc(-R*0.28,-R*0.14,R*0.09,0,6.28); C2.arc(R*0.28,-R*0.14,R*0.09,0,6.28); C2.fill();
+    C2.fillStyle="#fff"; C2.beginPath(); C2.arc(-R*0.24,-R*0.19,R*0.035,0,6.28); C2.arc(R*0.32,-R*0.19,R*0.035,0,6.28); C2.fill();
+    C2.strokeStyle="#0f172a"; C2.lineWidth=1.6;
+    C2.beginPath(); C2.arc(0,R*0.02,R*0.12,0.15,Math.PI-0.15); C2.stroke();
+    Q_CACHE[key]=cv;
+  }
   C.save(); C.translate(x,y); C.rotate(rot);
-  if(F&&F.parts) for(const pt of F.parts){ if(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing") qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C); }
-  C.fillStyle=bodyC;
-  C.beginPath(); C.ellipse(0,R*0.3,R*0.6,R*0.5,0,0,6.28); C.fill();
-  C.beginPath(); C.arc(0,-R*0.08,R*0.7,0,6.28); C.fill();
-  C.fillStyle=bellyC;
-  C.beginPath(); C.ellipse(0,R*0.48,R*0.38,R*0.28,0,0,6.28); C.fill();
-  if(F&&F.parts) for(const pt of F.parts){ if(!(pt[0]==="tail"||pt[0]==="shell"||pt[0]==="wing")) qPart(pt[0],pt[1],pt[2],pt[3],pt[4],pt[5],R,C); }
-  C.fillStyle="#fff"; C.beginPath(); C.ellipse(-R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C.ellipse(R*0.28,-R*0.16,R*0.17,R*0.2,0,0,6.28); C.fill();
-  C.fillStyle="#0f172a"; C.beginPath(); C.arc(-R*0.28,-R*0.14,R*0.09,0,6.28); C.arc(R*0.28,-R*0.14,R*0.09,0,6.28); C.fill();
-  C.fillStyle="#fff"; C.beginPath(); C.arc(-R*0.24,-R*0.19,R*0.035,0,6.28); C.arc(R*0.32,-R*0.19,R*0.035,0,6.28); C.fill();
-  C.strokeStyle="#0f172a"; C.lineWidth=1.6;
-  C.beginPath(); C.arc(0,R*0.02,R*0.12,0.15,Math.PI-0.15); C.stroke();
+  C.drawImage(cv,-bucket,-bucket,bucket*2,bucket*2);
+  if(S.shiny&&S.shiny[id]) drawShinyFx(C,0,0,bucket*1.1);
   C.restore();
 }
 function attrDrawer(attr){
@@ -4319,7 +4749,112 @@ function showBanner(txt){
   bannerTO=setTimeout(()=>{ $("banner").hidden=true; },2200);
 }
 /* ===== 宝可梦图鉴面板 ===== */
-function refreshMenuCoins(){ $("menu-coins").textContent=S.coins; const mu=$("menu-user"); if(mu){ const u=currentUser(); mu.textContent = u==="guest" ? "游客模式 · 未登录" : "账号："+u; } }
+function renderPlayerCard(){
+  const cv=$("pv-avatar"); if(cv){ const c=cv.getContext("2d"); c.clearRect(0,0,56,56); drawQ(S.avatar||"pikachu",28,30,24,0,roleForm(S.avatar),c); }
+  const nm=$("pv-name"); if(nm){ const u=currentUser(); nm.textContent = u==="guest" ? "游客" : u; }
+  const ow=Object.keys(S.roster).length, sh=Object.keys(S.shiny).length;
+  $("pv-best").textContent = S.best ? "最佳 · 第 "+S.best+" 关" : "最佳 · 未通关";
+  $("pv-counts").textContent = "精灵 "+ow+" · 闪光 "+sh;
+}
+function openProfile(){
+  hide("menu"); show("profile"); renderProfile();
+}
+function closeProfile(){ hide("profile"); show("menu"); refreshMenuCoins(); }
+function renderProfile(){
+  const cv=$("prof-avatar"); if(cv){ const c=cv.getContext("2d"); c.clearRect(0,0,96,96); drawQ(S.avatar||"pikachu",48,52,42,0,roleForm(S.avatar),c); }
+  const u=currentUser();
+  $("prof-name").textContent = u==="guest" ? "游客" : u;
+  $("prof-best").textContent = S.best ? "第 "+S.best+" 关" : "未通关";
+  $("prof-own").textContent = Object.keys(S.roster).length;
+  $("prof-shiny").textContent = Object.keys(S.shiny).length;
+  $("prof-kills").textContent = S.stats.kills||0;
+  $("prof-coins").textContent = S.coins;
+  const grid=$("ach-grid"); grid.innerHTML="";
+  for(const a of ACHIEVES){
+    const got=!!S.achieves[a.id];
+    const it=document.createElement("div"); it.className="ach-it"+(got?"":" locked");
+    it.innerHTML='<span class="ai">'+a.icon+'</span><span><span class="an">'+a.name+'</span><br><span class="ad">'+a.desc+'</span></span>';
+    grid.appendChild(it);
+  }
+  const avs=["pichu","pikachu","raichu","bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","eevee","jigglypuff","meowth","psyduck","snorlax","gengar","mewtwo","mew"];
+  const uniq=[...new Set([S.avatar,...Object.keys(S.roster),...avs])].filter(id=>POKEDEX[id]).slice(0,30);
+  const pick=$("av-pick"); pick.innerHTML="";
+  for(const id of uniq){
+    const b=document.createElement("button"); b.className="av-it"+(id===S.avatar?" cur":"");
+    const cv2=document.createElement("canvas"); cv2.width=44; cv2.height=44;
+    b.appendChild(cv2); b.title=PK(id).name;
+    const c2=cv2.getContext("2d"); drawQ(id,22,24,18,0,roleForm(id),c2);
+    b.addEventListener("click",()=>{ S.avatar=id; saveProgress(); renderProfile(); renderPlayerCard(); });
+    pick.appendChild(b);
+  }
+}
+function toggleAvatarPick(){ const el=$("av-pick"); el.hidden=!el.hidden; }
+/* ===== 世代 BGM（Web Audio 合成 · 原创风格旋律） ===== */
+const BGM_SETS={
+  "1":"关东", "2":"城都", "3":"丰缘", "4":"神奥", "5":"合众",
+  "6":"卡洛斯", "7":"阿罗拉", "8":"伽勒尔", "9":"帕底亚"
+};
+const BGM_MELODY={            // MIDI 音符（0=休止）· 每世代 16 步 loop · 原创八音盒风格
+  "1":[60,62,64,67,64,60,55,57,60,0,62,64,67,64,60,55],
+  "2":[62,64,66,69,66,62,57,59,62,0,64,66,69,66,62,57],
+  "3":[64,67,71,72,71,67,64,62,64,0,67,71,72,71,67,64],
+  "4":[65,67,69,72,69,65,60,62,65,0,67,69,72,69,65,60],
+  "7":[64,60,67,64,69,64,72,67,64,60,67,64,69,72,67,64],
+  "5":[67,71,74,76,74,71,67,64,66,0,71,74,76,74,71,67],
+  "6":[69,72,76,81,76,72,69,65,67,0,72,76,81,76,72,69],
+  "8":[62,65,70,74,70,65,62,58,60,0,65,70,74,70,65,62],
+  "9":[64,68,71,75,71,68,64,60,62,0,68,71,75,71,68,64]
+};
+const BGM_BASS={ "1":36,"2":38,"3":40,"4":41,"5":43,"6":45,"7":48,"8":38,"9":40 };
+let bgmTimer=null, bgmStep=0, bgmGen=null;
+function midiFreq(n){ return 440*Math.pow(2,(n-69)/12); }
+function stopBgm(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer=null; } }
+function startBgm(gen){
+  stopBgm();
+  if(!gen||gen==="off"||!BGM_SETS[gen]) return;
+  if(!AUDIO.ctx) ensureAudio();
+  if(!AUDIO.ctx || !AUDIO.enabled) return;
+  bgmGen=gen; bgmStep=0;
+  const ctx=AUDIO.ctx;
+  const bass=BGM_BASS[gen], mel=BGM_MELODY[gen];
+  bgmTimer=setInterval(()=>{
+    if(!ctx || ctx.state!=="running" || S.mute) return;
+    const step=bgmStep%mel.length;
+    const t0=ctx.currentTime;
+    // 旋律：三角波八音盒
+    const n=mel[step];
+    if(n){
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type="triangle"; o.frequency.value=midiFreq(n);
+      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.07,t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+0.32);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0); o.stop(t0+0.36);
+    }
+    // 低音：每 4 步根音
+    if(step%4===0){
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type="sine"; o.frequency.value=midiFreq(bass);
+      g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.09,t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t0+0.7);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0); o.stop(t0+0.75);
+    }
+    bgmStep++;
+  }, 240);
+}
+function openBgmPanel(){
+  const grid=$("bgm-grid"); grid.innerHTML="";
+  const list=["off",...Object.keys(BGM_SETS)];
+  for(const g of list){
+    const b=document.createElement("button"); b.className="bgm-btn"+(S.bgm===g?" cur":"");
+    b.textContent = g==="off" ? "关闭" : "第 "+g+" 世代 · "+BGM_SETS[g];
+    b.addEventListener("click",()=>{ S.bgm=g; saveProgress(); startBgm(g); openBgmPanel(); });
+    grid.appendChild(b);
+  }
+  hide("menu"); show("bgm-panel");
+}
+function refreshMenuCoins(){ $("menu-coins").textContent=S.coins; const mu=$("menu-user"); if(mu){ const u=currentUser(); mu.textContent = u==="guest" ? "游客模式 · 未登录" : "账号："+u; } renderPlayerCard(); }
 const SLOT_COST = [0, 10000, 40000];   // 队伍格 2/3 永久解锁价（巨额金币）
 function renderPartyBar(){
   const bar=$("party-bar"); bar.innerHTML="";
@@ -4366,16 +4901,14 @@ function renderCollection(){
   // 手环商店：极巨化 / Z 招式（永久解锁）
   const shop=$("shop-row"); shop.innerHTML="";
   const dynaBtn=document.createElement("button");
-  dynaBtn.className="shop-btn"+(S.dynaUnlocked?" owned":"");
-  dynaBtn.textContent = S.dynaUnlocked? "极巨手环 · 已解锁（每关 1 次，按 G 极巨化）" : "极巨手环 "+DYNA_COST+" 金币";
-  dynaBtn.disabled = S.dynaUnlocked || S.coins<DYNA_COST;
-  dynaBtn.addEventListener("click",()=>{ if(S.coins>=DYNA_COST && !S.dynaUnlocked){ S.coins-=DYNA_COST; S.dynaUnlocked=true; try{localStorage.setItem("starburst_dyna","1");}catch(e){} saveProgress(); renderCollection(); } });
+  dynaBtn.className="shop-btn";
+  dynaBtn.textContent = "极巨化 · 前往商店（按精灵售卖）";
+  dynaBtn.addEventListener("click",()=>{ shopTab="dyna"; shopPage=0; hide("collection"); show("shop"); renderShop(); });
   shop.appendChild(dynaBtn);
   const zBtn=document.createElement("button");
   zBtn.className="shop-btn"+(S.zUnlocked?" owned":"");
   zBtn.textContent = S.zUnlocked? "Z 手环 · 已解锁（战斗中满能量按 Z 放"+zMoveName()+"）" : "Z 手环 "+Z_COST+" 金币";
-  zBtn.disabled = S.zUnlocked || S.coins<Z_COST;
-  zBtn.addEventListener("click",()=>{ if(S.coins>=Z_COST && !S.zUnlocked){ S.coins-=Z_COST; S.zUnlocked=true; try{localStorage.setItem("starburst_z","1");}catch(e){} saveProgress(); renderCollection(); } });
+  zBtn.addEventListener("click",()=>{ if(!S.zUnlocked && S.coins<Z_COST){ showToast("金币不足 · 还差 "+(Z_COST-S.coins)+" 金币"); return; } if(S.coins>=Z_COST && !S.zUnlocked){ S.coins-=Z_COST; S.zUnlocked=true; try{localStorage.setItem("starburst_z","1");}catch(e){} saveProgress(); renderCollection(); } });
   shop.appendChild(zBtn);
   const grid=$("col-grid"); grid.innerHTML="";
   const list = S.colGen==="all" ? POKEDEX_KEYS : POKEDEX_KEYS.filter(id=>PK(id).gen===+S.colGen);
@@ -4394,17 +4927,26 @@ function renderCollection(){
       '<div class="col-skill">'+(owned?(T.skills[Math.min(form,3)-1]+" · "+T.desc):(STARTER3.includes(id)?"御三家 · 可金币解锁":"击败"+T.attr+"系 Boss 可捕捉"))+'</div>';
     if(owned){
       const actions=document.createElement("div"); actions.className="col-actions";
+      const fr=document.createElement("div"); fr.className="form-row";   // 战前形态选择：进化后初始形态保留
+      for(let f=1;f<=S.roster[id];f++){
+        const fb=document.createElement("button"); fb.className="form-btn"+(f===form?" cur":"");
+        fb.textContent=f;
+        fb.title=roleName(id,f);
+        fb.addEventListener("click",()=>{ if(f===form) return; S.formPick[id]=f; saveProgress(); renderCollection(); });
+        fr.appendChild(fb);
+      }
+      if(S.roster[id]>1){ actions.appendChild(fr); }
       const ev=document.createElement("button"); ev.className="btn-evolve";
       const mf=roleMaxForm(id);
       if(form>=mf){ ev.textContent="进化满"; ev.disabled=true; }
       else{
         const cost=ROLE_EVOLVE_COST[form];
         ev.textContent="进化 "+cost;
-        ev.disabled = S.coins<cost;
-        ev.addEventListener("click",()=>{
-          if(S.coins<cost) return;
-          S.coins-=cost; S.roster[id]=form+1;
+          ev.addEventListener("click",()=>{
+          if(S.coins<cost){ showToast("金币不足 · 还差 "+(cost-S.coins)+" 金币"); return; }
+          S.coins-=cost; S.roster[id]=form+1; S.formPick[id]=form+1;   // 最高形态解锁 · 初始形态保留可随时切回
           saveProgress();
+          checkAchieves();
           renderCollection();
         });
       }
@@ -4422,8 +4964,7 @@ function renderCollection(){
         if(S.mega[id]){ mb.textContent="已 Mega"; mb.classList.add("used"); mb.disabled=true; }
         else{
           mb.textContent="Mega 石 "+MEGA_COST;
-          mb.disabled = S.coins<MEGA_COST;
-          mb.addEventListener("click",()=>{ if(S.coins>=MEGA_COST){ S.coins-=MEGA_COST; S.mega[id]=true; try{localStorage.setItem("starburst_mega",JSON.stringify(S.mega));}catch(e){} saveProgress(); renderCollection(); } });
+          mb.addEventListener("click",()=>{ if(S.coins<MEGA_COST){ showToast("金币不足 · 还差 "+(MEGA_COST-S.coins)+" 金币"); return; } S.coins-=MEGA_COST; S.mega[id]=true; try{localStorage.setItem("starburst_mega",JSON.stringify(S.mega));}catch(e){} saveProgress(); renderCollection(); });
         }
         actions.appendChild(mb);
       }
@@ -4444,68 +4985,110 @@ function renderCollection(){
     }
     if(!owned && STARTER3.includes(id)){
       const ub=document.createElement("button"); ub.className="btn-pick";
-      ub.textContent="100 金币解锁"; ub.disabled = S.coins<100;
-      ub.addEventListener("click",()=>{ if(S.coins>=100){ S.coins-=100; S.roster[id]=1; saveProgress(); renderCollection(); } });
+      ub.textContent="100 金币解锁";
+      ub.addEventListener("click",()=>{ if(S.coins<100){ showToast("金币不足 · 还差 "+(100-S.coins)+" 金币"); return; } S.coins-=100; S.roster[id]=1; saveProgress(); renderCollection(); });
       card.appendChild(ub);
     }
     grid.appendChild(card);
   }
 }
-let shopTab="z";
+let shopTab="z", shopPage=0;
+const SHOP_PER=20;   // 5 列 × 4 行 = 20 格
 function renderShop(){
   const sc=$("shop-coins"); if(sc) sc.textContent=S.coins;
   const tabs=$("shop-tabs"); tabs.innerHTML="";
   for(const [k,lbl] of [["z","Z 招式"],["mega","Mega 石"],["dyna","极巨化"]]){
     const tb=document.createElement("button"); tb.className="col-tab"+(shopTab===k?" on":"");
     tb.textContent=lbl;
-    tb.addEventListener("click",()=>{ shopTab=k; renderShop(); });
+    tb.addEventListener("click",()=>{ shopTab=k; shopPage=0; renderShop(); });
     tabs.appendChild(tb);
   }
   const grid=$("shop-grid"); grid.innerHTML="";
-  if(shopTab==="z"){
-    for(const attr of ATTR_KEYS){
-      const T=ATTR_TEXT[attr]; const owned=!!S.zOwned[attr];
-      const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
-      card.innerHTML='<div class="col-dot" style="background:'+T.color+'">'+T.attr+'</div>'+
-        '<div class="col-name">'+Z_MOVE_BY_ATTR[attr]+'</div>'+
-        '<div class="col-attr">'+T.attr+'属性 Z 招式</div>'+
-        '<div class="col-skill">战斗能量满 100 按 Z 施放（出战精灵属性对应，原著 Z 招式）</div>';
-      const b=document.createElement("button"); b.className="btn-pick";
-      if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
-      else{ b.textContent="购买 "+Z_COST; b.disabled=S.coins<Z_COST;
-        b.addEventListener("click",()=>{ if(S.coins>=Z_COST){ S.coins-=Z_COST; S.zOwned[attr]=true; S.zUnlocked=true; saveProgress(); renderShop(); } }); }
-      card.appendChild(b); grid.appendChild(card);
+  let items=[];
+  if(shopTab==="z"){ items=ATTR_KEYS.map(attr=>({t:"z",attr})); }
+  else if(shopTab==="mega"){ items=Object.keys(MEGA_SET).map(id=>({t:"mega",id})); }
+  else { items=Object.keys(DYNA_SET).map(id=>({t:"dyna",id})); }
+  const pages=Math.max(1,Math.ceil(items.length/SHOP_PER));
+  if(shopPage>=pages) shopPage=pages-1;
+  const slice=items.slice(shopPage*SHOP_PER, shopPage*SHOP_PER+SHOP_PER);
+  for(const it of slice){
+    let dot="",name="",attrLine="",skillLine="",cost=0,owned=false,kind="";
+    if(it.t==="z"){
+      const T=ATTR_TEXT[it.attr]; owned=!!S.zOwned[it.attr];
+      dot='<div class="col-dot" style="background:'+T.color+'">'+T.attr+'</div>';
+      name=Z_MOVE_BY_ATTR[it.attr]; attrLine=T.attr+'属性 Z 招式';
+      skillLine='战斗能量满 100 按 Z 施放（原著 Z 招式）'; cost=Z_COST; kind="z";
+    } else if(it.t==="mega"){
+      const R=PK(it.id), T=ATTR_TEXT[R.attr]; owned=!!S.mega[it.id];
+      dot='<div class="col-dot" style="background:'+T.color+'">M</div>';
+      name=R.name+' · Mega'; attrLine='G'+R.gen+' · '+T.attr+'属性';
+      skillLine='出战该精灵大幅强化（原著可 Mega）'; cost=MEGA_COST; kind="mega";
+    } else {
+      const R=PK(it.id), T=ATTR_TEXT[R.attr]; owned=!!S.dynaOwned[it.id];
+      dot='<div class="col-dot" style="background:#a78bfa">极</div>';
+      name=R.name+' · 超极巨'; attrLine='G'+R.gen+' · '+T.attr+'属性';
+      skillLine='战斗中按 G 超极巨化（原著 Gigantamax）'; cost=DYNA_COST; kind="dyna";
     }
-  } else if(shopTab==="mega"){
-    for(const id of Object.keys(MEGA_SET)){
-      const R=PK(id); const T=ATTR_TEXT[R.attr];
-      const owned=!!S.mega[id];
-      const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
-      card.innerHTML='<div class="col-dot" style="background:'+T.color+'">'+T.attr+'</div>'+
-        '<div class="col-name">'+R.name+' · Mega</div>'+
-        '<div class="col-attr">G'+R.gen+' · '+T.attr+'属性</div>'+
-        '<div class="col-skill">出战该精灵大幅强化（原著可 Mega 名单 '+Object.keys(MEGA_SET).length+' 只）</div>';
-      const b=document.createElement("button"); b.className="btn-pick";
-      if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
-      else{ b.textContent="购买 "+MEGA_COST; b.disabled=S.coins<MEGA_COST;
-        b.addEventListener("click",()=>{ if(S.coins>=MEGA_COST){ S.coins-=MEGA_COST; S.mega[id]=true; saveProgress(); renderShop(); } }); }
-      card.appendChild(b); grid.appendChild(card);
-    }
-  } else {
-    const owned=S.dynaUnlocked;
     const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
-    card.innerHTML='<div class="col-dot" style="background:#a78bfa">极</div>'+
-      '<div class="col-name">极巨化手环</div>'+
-      '<div class="col-attr">全宝可梦通用</div>'+
-      '<div class="col-skill">战斗中按 G 极巨化：体型变大、受击减半、属性招式强化（每关 1 次）</div>';
+    card.innerHTML=dot+'<div class="col-name">'+name+'</div><div class="col-attr">'+attrLine+'</div><div class="col-skill">'+skillLine+'</div>';
     const b=document.createElement("button"); b.className="btn-pick";
     if(owned){ b.textContent="已拥有"; b.disabled=true; b.classList.add("used"); }
-    else{ b.textContent="购买 "+DYNA_COST; b.disabled=S.coins<DYNA_COST;
-      b.addEventListener("click",()=>{ if(S.coins>=DYNA_COST){ S.coins-=DYNA_COST; S.dynaUnlocked=true; saveProgress(); renderShop(); } }); }
+    else{
+      b.textContent="购买 "+cost;
+      b.addEventListener("click",()=>{
+        if(S.coins<cost){ showToast("金币不足 · 还差 "+(cost-S.coins)+" 金币"); return; }
+        S.coins-=cost;
+        if(kind==="z"){ S.zOwned[it.attr]=true; S.zUnlocked=true; }
+        else if(kind==="mega"){ S.mega[it.id]=true; }
+        else { S.dynaOwned[it.id]=true; }
+        saveProgress(); renderShop();
+      });
+    }
     card.appendChild(b); grid.appendChild(card);
+  }
+  const pager=$("shop-page"); if(pager){
+    pager.innerHTML="";
+    if(pages>1){
+      const prev=document.createElement("button"); prev.className="btn ghost"; prev.textContent="◀ 上一页";
+      prev.addEventListener("click",()=>{ shopPage=Math.max(0,shopPage-1); renderShop(); });
+      const info=document.createElement("span"); info.className="col-sub"; info.style.margin="0 10px";
+      info.textContent="第 "+(shopPage+1)+" / "+pages+" 页 · 共 "+items.length+" 项";
+      const next=document.createElement("button"); next.className="btn ghost"; next.textContent="下一页 ▶";
+      next.addEventListener("click",()=>{ shopPage=Math.min(pages-1,shopPage+1); renderShop(); });
+      pager.appendChild(prev); pager.appendChild(info); pager.appendChild(next);
+    }
   }
 }
 let attrPickUI=null;
+function tierSlots(id){
+  const t=roleTier(id);
+  if(t===3) return [{q:"red",label:"红 · 一级神专属"},{q:"gold",label:"金 · 一级神专属"}];
+  if(t===2) return [{q:"gold",label:"金 · 二级神专属"},{q:"blue",label:"蓝 · 二级神专属"}];
+  if(t===1) return [{q:"gold",label:"金 · 幻兽专属"}];
+  return [{q:"blue",label:"蓝 · 普通精灵专属"}];
+}
+function openTierPick(id, onDone){
+  const R=PK(id), T=ATTR_TEXT[R.attr]||ATTR_TEXT.normal;
+  const slots=tierSlots(id);
+  attrPickUI={ attr:R.attr, id, slots, onDone, mode:"tier" };
+  $("attr-title").textContent = "选择 "+R.name+" 的品质技能";
+  $("attr-sub").textContent = "开局自选入场技能（"+slots.map(s=>Q_NAME[s.q]).join(" + ")+"）· 仅本角色可用 · 确认后进入战斗";
+  const grid=$("attr-grid"); grid.innerHTML="";
+  for(const s of slots){
+    const grp=document.createElement("div"); grp.className="tier-grp";
+    const cap=document.createElement("div"); cap.className="tier-cap"; cap.textContent=s.label;
+    grp.appendChild(cap);
+    const pool=ATTR_SKILLS.filter(x=>x.attr===R.attr && x.quality===s.q);
+    for(const sk of pool){
+      const lab=document.createElement("label"); lab.className="attr-it";
+      lab.innerHTML='<input type="radio" class="attr-cb" name="tier-'+s.q+'" data-id="'+sk.id+'" data-q="'+s.q+'"> <b style="color:'+Q_COLOR[sk.quality]+'">['+Q_NAME[sk.quality]+']</b> '+sk.name+' <span class="attr-desc">'+sk.desc+'</span>';
+      grp.appendChild(lab);
+    }
+    grid.appendChild(grp);
+  }
+  const ok=$("attr-ok"); ok.textContent="确认入场";
+  hide("menu"); hide("collection"); show("attrpick");
+}
 function openAttrPick(attr, onDone){
   attrPickUI={ attr, onDone };
   const T=ATTR_TEXT[attr]||ATTR_TEXT.normal;
@@ -4521,6 +5104,20 @@ function openAttrPick(attr, onDone){
 }
 function attrPickConfirm(){
   if(!attrPickUI) return;
+  if(attrPickUI.mode==="tier"){
+    const slots=attrPickUI.slots, picked=[];
+    for(const s of slots){
+      const id=[...document.querySelectorAll('#attr-grid input[data-q="'+s.q+'"]:checked')].map(i=>i.dataset.id)[0];
+      if(!id){ showBanner("请为「"+s.label+"」选择一个技能"); return; }
+      picked.push(id);
+    }
+    S.tierIds={};
+    for(const id of picked){ S.tierIds[id]=true; S.skills[id]=S.skills[id]||1; }
+    saveProgress();
+    const done=attrPickUI.onDone; attrPickUI=null; hide("attrpick"); $("attr-ok").textContent="确认装备";
+    if(done) done();
+    return;
+  }
   const attr=attrPickUI.attr;
   const sel=[...document.querySelectorAll("#attr-grid input:checked")].map(i=>i.dataset.id);
   if(!sel.length){ showBanner("至少选择 1 个专属技能"); return; }
@@ -4536,6 +5133,7 @@ function attrPickConfirm(){
     else S.skills[id]=S.skills[id]||1;
   }
   S.attrPick[attr]=sel; saveProgress();
+  checkAchieves();
   const done=attrPickUI.onDone; attrPickUI=null; hide("attrpick");
   if(done) done();
 }
@@ -4571,8 +5169,64 @@ function newPartner(id){
 }
 function startGame(){
   const attr=PK(S.activeRole).attr;
-  if(!S.attrPick[attr]){ hide("menu"); openAttrPick(attr, ()=>{ show("menu"); startGame(); }); return; }   // 未选择该属性专属技能 → 先选
-  confirmStart();
+  if(!S.attrPick[attr]){ hide("menu"); openAttrPick(attr, ()=>{ startGame(); }); return; }   // 未选择该属性专属技能 → 先选
+  hide("menu"); openTierPick(S.activeRole, ()=>playOpening(confirmStart));                  // 品质技能确认后 → 开场动画 → 开战
+}
+let openingUI=null;
+function openingSfx(){   // 火红叶绿风格开场音效（Web Audio 琶音）
+  if(!AUDIO.ctx || S.mute || !AUDIO.enabled || AUDIO.ctx.state!=="running") return;
+  const ctx=AUDIO.ctx, t0=ctx.currentTime+0.02;
+  const notes=[523.25,659.25,783.99,1046.5];
+  for(let i=0;i<notes.length;i++){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type="triangle"; o.frequency.value=notes[i];
+    g.gain.setValueAtTime(0.0001,t0+i*0.13);
+    g.gain.exponentialRampToValueAtTime(0.28,t0+i*0.13+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+i*0.13+0.55);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0+i*0.13); o.stop(t0+i*0.13+0.6);
+  }
+}
+function playOpening(onDone){
+  ensureAudio(); openingSfx();
+  show("opening");
+  const cv=$("op-canvas"), C=cv.getContext("2d");
+  const T0=performance.now(), DUR=4.3;
+  let raf;
+  function draw(now){
+    const t=(now-T0)/1000;
+    if(t>=DUR){ hide("opening"); if(onDone) onDone(); return; }
+    C.clearRect(0,0,cv.width,cv.height);
+    if(t<1.5){                                     // 阶段 1：制作人 NoMo
+      const a=Math.max(0,Math.min(1,(t-0.2)/0.7))*Math.max(0,Math.min(1,(1.5-t)/0.35));
+      C.globalAlpha=a; C.fillStyle="#f8fafc";
+      C.font="600 34px Georgia, serif"; C.textAlign="center"; C.textBaseline="middle";
+      C.fillText("NOMO presents", cv.width/2, cv.height/2-20);
+      C.font="16px Arial"; C.fillStyle="#94a3b8";
+      C.fillText("制作人 NoMo", cv.width/2, cv.height/2+28);
+      C.globalAlpha=1;
+    } else {                                       // 阶段 2：精灵球 + POKERUSH 标题
+      const p=(t-1.5)/2.8;
+      const s=0.35+0.65*Math.min(1,p*1.6);
+      const rot=t*2.2;
+      const cx=cv.width/2, cy=cv.height/2-30, R=34*s;
+      C.save(); C.translate(cx,cy); C.rotate(rot);
+      C.beginPath(); C.arc(0,0,R,0,Math.PI*2); C.fillStyle="#ef4444"; C.fill();
+      C.beginPath(); C.arc(0,0,R,0,Math.PI,true); C.fillStyle="#f8fafc"; C.fill();
+      C.fillStyle="#0f172a"; C.fillRect(-R,0,R*2,R*0.14);
+      C.beginPath(); C.arc(0,0,R*0.28,0,Math.PI*2); C.fillStyle="#f8fafc"; C.fill();
+      C.beginPath(); C.arc(0,0,R*0.15,0,Math.PI*2); C.fillStyle="#0f172a"; C.fill();
+      C.restore();
+      const ta=Math.max(0,Math.min(1,(p-0.25)*3));
+      C.globalAlpha=ta; C.fillStyle="#fbbf24";
+      C.font="900 46px Arial Black, sans-serif"; C.textAlign="center"; C.textBaseline="middle";
+      C.fillText("POKERUSH", cv.width/2, cv.height/2+74);
+      C.globalAlpha=1;
+    }
+    raf=requestAnimationFrame(draw);
+  }
+  raf=requestAnimationFrame(draw);
+  openingUI={ cancel:()=>{ cancelAnimationFrame(raf); hide("opening"); if(onDone) onDone(); } };
 }
 function confirmStart(){
   ensureAudio();
@@ -4606,7 +5260,7 @@ function renderPauseSkills(){
   const names=[];
   for(const id in S.skills){
     const lvl=S.skills[id];
-    const s=SKILLS.find(x=>x.id===id);
+    const s=SKILLMAP[id];
     if(s){
       const q=qOf(s), qc=Q_COLOR[q];
       names.push('<span class="psk'+(s.fus?' fused':'')+'" style="border-color:'+qc+';color:'+qc+'" title="['+Q_NAME[q]+'品质] '+s.name+'：'+s.desc+'">'+s.name+' Lv.'+lvl+'</span>');
@@ -4642,7 +5296,10 @@ function gameOver(){
   else if(best){ el.classList.remove("hidden"); el.textContent="最佳记录 "+fmtTime(best.time); }
   else el.classList.add("hidden");
   $("go-stage").textContent="到达第 "+S.stage+" 关 · 金币 +"+S.runCoins+"（累计 "+S.coins+"）";
+  S.stats.kills += rec.kills; S.stats.kills = S.stats.kills||0;
+  checkAchieves();
   show("gameover");
+  renderPlayerCard();
 }
 
 /* ===== 输入 ===== */
@@ -4740,6 +5397,12 @@ $("btn-auth").addEventListener("click",()=>{
   hide("menu"); show("auth");
 });
 $("auth-back").addEventListener("click",()=>{ hide("auth"); show("menu"); refreshMenuCoins(); });
+$("player-card").addEventListener("click",openProfile);
+$("btn-profile-back").addEventListener("click",closeProfile);
+$("btn-avatar").addEventListener("click",toggleAvatarPick);
+$("btn-bgm").addEventListener("click",openBgmPanel);
+$("btn-bgm-back").addEventListener("click",()=>{ hide("bgm-panel"); show("menu"); refreshMenuCoins(); });
+$("btn-open-skip").addEventListener("click",()=>{ if(openingUI){ const c=openingUI.cancel; openingUI=null; c(); } });
 $("auth-login").addEventListener("click",()=>{
   const e=loginUser($("auth-user").value,$("auth-pass").value);
   if(e){ $("auth-msg").textContent=e; return; }
@@ -4757,10 +5420,10 @@ $("auth-logout").addEventListener("click",()=>{
   showBanner("已退出账号 · 游客模式");
 });
 $("btn-catch").addEventListener("click",tryCatch);
-$("btn-catch-run").addEventListener("click",()=>{ if(S.mode!=="catch") return; hide("catch"); showBanner("已放弃捕捉"); finishStage(); });
+$("btn-catch-run").addEventListener("click",()=>{ if(S.mode!=="catch") return; hide("catch"); S.coins+=15; S.runCoins+=15; saveProgress(); finishStage(); setTimeout(()=>showBanner("已放弃捕捉 · 金币 +15"),900); });
 $("attr-ok").addEventListener("click",attrPickConfirm);
 $("attr-back").addEventListener("click",()=>{
-  attrPickUI=null; S.pendingRole=null; hide("attrpick"); show("menu"); refreshMenuCoins();
+  attrPickUI=null; S.pendingRole=null; hide("attrpick"); $("attr-ok").textContent="确认装备"; show("menu"); refreshMenuCoins();
 });
 $("btn-retry").addEventListener("click",startGame);
 $("btn-pause").addEventListener("click",()=>{
@@ -4779,5 +5442,6 @@ $("btn-mute").style.opacity=S.mute?0.45:1;
 refreshMenuCoins();
 requestAnimationFrame(loop);
 </script>
+  <div id="toast"></div>
 </body>
 </html>

@@ -4571,14 +4571,15 @@ const SPR_INLINE={"bulbasaur":"iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAGV
 const SPR_BASES=["https://cdn.jsdelivr.net/gh/PMDCollab/SpriteCollab@master/portrait/","https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/"];
 const SPR_IMG={}, SPR_FAILED={}, SPR_TRIES={}, SPR_BLOB={};
 function spriteUrl(id,shiny,idx){
-  if(!shiny && SPR_INLINE[id]) return SPR_INLINE[id];   // 普通形态：内联 base64，离线也能显示
+  if(!shiny && SPR_INLINE[id]) return "data:image/png;base64,"+SPR_INLINE[id];   // 普通形态：内联 base64，离线也能显示
   const no=DEX_NO[id]; if(!no) return "";
   return SPR_BASES[idx||0]+("0000"+no).slice(-4)+"/"+(shiny?"Shiny":"Normal")+".png";
 }
 function inlineToBlob(b64){
   if(SPR_BLOB[b64]) return SPR_BLOB[b64];
   try{
-    const bin=atob(b64);
+    const s=b64.indexOf(",")>=0?b64.slice(b64.indexOf(",")+1):b64;
+    const bin=atob(s);
     const u8=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
     const url=URL.createObjectURL(new Blob([u8],{type:"image/png"}));
@@ -4589,32 +4590,53 @@ function getSprite(id,shiny,cb){
   const key=id+(shiny?"|s":"");
   if(SPR_FAILED[key]) return;
   let im=SPR_IMG[key];
-  if(im){ if(im.complete&&im.naturalWidth>0) cb&&cb(im); return; }
+  if(im){
+    if(im.complete&&im.naturalWidth>0){ cb&&cb(im); return; }
+    if(cb){ (im._cbs=im._cbs||[]).push(cb); }
+    return;
+  }
   let u=spriteUrl(id,shiny,SPR_TRIES[key]||0); if(!u) return;
   if(u.indexOf("data:")===0){ const bu=inlineToBlob(u); if(!bu){ SPR_FAILED[key]=1; return; } u=bu; }
   im=new Image(); if(u.indexOf("blob:")!==0) im.crossOrigin="anonymous"; SPR_IMG[key]=im;
-  im.onload=function(){ if(cb) cb(im); };
+  im._cbs=[];
+  if(cb) im._cbs.push(cb);
+  im._fire=function(){
+    if(im._timer) clearTimeout(im._timer);
+    const cbs=im._cbs||[]; im._cbs=[];
+    for(const f of cbs){ try{ f(im); }catch(e){} }
+  };
+  im.onload=function(){ im._fire(); };
   im.onerror=function(){
+    if(im._timer) clearTimeout(im._timer);
+    const pending=(im._cbs||[]).slice(); im._cbs=[];
+    const all=function(x){ try{ if(im._cbWrap) im._cbWrap(x); }catch(e){} for(const f of pending){ try{ f(x); }catch(e){} } };
     SPR_IMG[key]=null;
     const next=(SPR_TRIES[key]||0)+1;
-    if(next<SPR_BASES.length){ SPR_TRIES[key]=next; getSprite(id,shiny,cb); }
+    if(next<SPR_BASES.length){ SPR_TRIES[key]=next; getSprite(id,shiny,all); }
     else { SPR_FAILED[key]=1; }
   };
+  im._cbWrap=cb;
+  im._timer=setTimeout(function(){ if(!im.complete) im.onerror&&im.onerror(); }, 3500);
   im.src=u;
 }
 function sprReady(id,shiny){
   const key=id+(shiny?"|s":""); const im=SPR_IMG[key];
   return !!(im&&im.complete&&im.naturalWidth>0);
 }
-function drawStatic(id,cv,W,H,cx,cy,rr,form,keep){   // 静态 canvas：加载完成后自动重绘；keep=true 不清屏（保留底色）
+function drawStatic(id,cv,W,H,cx,cy,rr,form,keep,onLoad){   // 静态 canvas：只清精灵绘制区；加载完成后自动重绘；onLoad 为整体重绘回调
+  const CR=rr*1.4;
   const c=cv.getContext("2d");
-  if(!keep) c.clearRect(0,0,W,H);
+  c.save(); c.beginPath(); c.rect(cx-CR,cy-CR,CR*2,CR*2); c.clip();
+  c.clearRect(cx-CR,cy-CR,CR*2,CR*2); c.restore();
   drawQ(id,cx,cy,rr,0,form,c);
   const sh=!!(S&&S.shiny&&S.shiny[id]);
   if(!sprReady(id,sh)) getSprite(id,sh,function(){
     if(!cv.isConnected) return;
+    if(onLoad){ try{ onLoad(); }catch(e){} return; }
     const c2=cv.getContext("2d");
-    if(!keep) c2.clearRect(0,0,W,H);
+    const CR2=rr*1.4;
+    c2.save(); c2.beginPath(); c2.rect(cx-CR2,cy-CR2,CR2*2,CR2*2); c2.clip();
+    c2.clearRect(cx-CR2,cy-CR2,CR2*2,CR2*2); c2.restore();
     drawQ(id,cx,cy,rr,0,form,c2);
   });
 }
@@ -5160,16 +5182,22 @@ function renderCollection(){
     const cv=card.querySelector(".col-av");
     if(cv){
       const g2=cv.getContext("2d");
-      // 属性色球形容器 + 白色描边（统一球形 Q 版徽章）
       const rad=24;
-      const grd=g2.createRadialGradient(26,21,4,26,27,rad);
-      grd.addColorStop(0, T.color); grd.addColorStop(1, T.color+"cc");
-      g2.fillStyle=grd; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.fill();
-      g2.strokeStyle="#f8fafc"; g2.lineWidth=2.5; g2.stroke();
-      if(owned){ g2.save(); g2.beginPath(); g2.arc(26,26,rad-1.5,0,6.28); g2.clip();
-        drawStatic(id,cv,52,52,26,30,17,form,true); g2.restore();
-        g2.strokeStyle="rgba(2,6,23,.55)"; g2.lineWidth=1.4; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke(); }
-      else { g2.fillStyle="rgba(15,23,42,.6)"; g2.font="bold 20px sans-serif"; g2.textAlign="center"; g2.textBaseline="middle"; g2.fillText("?",26,27); }
+      const paintBadge=function(){
+        g2.clearRect(0,0,52,52);
+        if(owned){
+          g2.save(); g2.beginPath(); g2.arc(26,26,rad-1.5,0,6.28); g2.clip();
+          drawStatic(id,cv,52,52,26,30,17,form,false,paintBadge);
+          g2.restore();
+          g2.strokeStyle="#f8fafc"; g2.lineWidth=2.5; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke();
+          g2.strokeStyle="rgba(2,6,23,.55)"; g2.lineWidth=1.4; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke();
+        } else {
+          g2.fillStyle="rgba(15,23,42,.6)"; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.fill();
+          g2.strokeStyle="#f8fafc"; g2.lineWidth=2.5; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke();
+          g2.fillStyle="#cbd5e1"; g2.font="bold 20px sans-serif"; g2.textAlign="center"; g2.textBaseline="middle"; g2.fillText("?",26,27);
+        }
+      };
+      paintBadge();
     }
     if(!owned && STARTER3.includes(id)){
       const ub=document.createElement("button"); ub.className="btn-pick";

@@ -112,6 +112,9 @@
   .pc-name { font-size:15px; font-weight:800; color:#f8fafc; letter-spacing:1px; }
   .pc-row { font-size:11px; color:#94a3b8; }
   .profile-panel { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 26px; max-width:520px; width:92vw; max-height:80vh; overflow-y:auto; }
+  .prof-top{ display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:4px; }
+  .prof-top .col-title{ margin:0; }
+  .col-card.evol-able{ outline:1px dashed rgba(125,211,252,.5); outline-offset:-3px; }
   .prof-head { display:flex; align-items:center; gap:16px; }
   .prof-head canvas { width:120px; height:120px; border-radius:16px; background:rgba(2,6,23,.5); }
   .prof-info { display:flex; flex-direction:column; gap:5px; }
@@ -466,7 +469,7 @@
   <!-- ===== 个人主页：头像 / 数据 / 成就 ===== -->
   <div class="overlay" id="profile" hidden>
     <div class="panel profile-panel">
-      <h2 class="col-title">个人主页</h2>
+      <div class="prof-top"><h2 class="col-title">个人主页</h2><button class="btn ghost" id="btn-profile-back">返回</button></div>
       <div class="prof-head">
         <canvas id="prof-avatar" width="96" height="96"></canvas>
         <div class="prof-info">
@@ -480,9 +483,6 @@
       <div class="av-pick" id="av-pick" hidden></div>
       <div class="ach-title">成就</div>
       <div class="ach-grid" id="ach-grid"></div>
-      <div class="p-row">
-        <button class="btn" id="btn-profile-back">返回</button>
-      </div>
     </div>
   </div>
 
@@ -1899,6 +1899,7 @@ function loadProgress(){
   if(d.best) S.best=d.best;
   S.mute = !!d.mute;
   S.avatar = (d.avatar && POKEDEX[d.avatar]) ? d.avatar : "pikachu";
+  if(S.avatar==="pichu") S.avatar="pikachu";   // 皮卡丘头像修复：误存为皮丘时统一回退皮卡丘
   if(d.achieves && typeof d.achieves==="object") S.achieves=d.achieves;
   if(d.formPick && typeof d.formPick==="object") S.formPick=d.formPick;
   if(d.bgm) S.bgm=d.bgm;
@@ -4955,7 +4956,7 @@ function showBanner(txt){
 }
 /* ===== 宝可梦图鉴面板 ===== */
 function renderPlayerCard(){
-  const cv=$("pv-avatar"); if(cv){ drawStatic(S.avatar||"pikachu",cv,64,64,32,34,28,roleForm(S.avatar)); }
+  const cv=$("pv-avatar"); if(cv){ drawStatic(S.avatar||"pikachu",cv,64,64,32,32,28,roleForm(S.avatar)); }
   const nm=$("pv-name"); if(nm){ const u=currentUser(); nm.textContent = u==="guest" ? "游客" : u; }
   const ow=Object.keys(S.roster).length, sh=Object.keys(S.shiny).length;
   $("pv-best").textContent = S.best ? "最佳 · 第 "+S.best+" 关" : "最佳 · 未通关";
@@ -4966,7 +4967,7 @@ function openProfile(){
 }
 function closeProfile(){ hide("profile"); show("menu"); refreshMenuCoins(); }
 function renderProfile(){
-  const cv=$("prof-avatar"); if(cv){ drawStatic(S.avatar||"pikachu",cv,120,120,60,62,52,roleForm(S.avatar)); }
+  const cv=$("prof-avatar"); if(cv){ drawStatic(S.avatar||"pikachu",cv,120,120,60,60,52,roleForm(S.avatar)); }
   const u=currentUser();
   $("prof-name").textContent = u==="guest" ? "游客" : u;
   $("prof-best").textContent = S.best ? "第 "+S.best+" 关" : "未通关";
@@ -4983,14 +4984,14 @@ function renderProfile(){
       +'<span class="ap"><i style="width:'+pct+'%"></i></span><span class="ap-t">'+Math.min(a.prog(),a.target)+' / '+a.target+'</span></span>';
     grid.appendChild(it);
   }
-  const avs=["pichu","pikachu","raichu","bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","eevee","jigglypuff","meowth","psyduck","snorlax","gengar","mewtwo","mew"];
+  const avs=["pikachu","raichu","bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","eevee","jigglypuff","meowth","psyduck","snorlax","gengar","mewtwo","mew"];
   const uniq=[...new Set([S.avatar,...Object.keys(S.roster),...avs])].filter(id=>POKEDEX[id]).slice(0,30);
   const pick=$("av-pick"); pick.innerHTML="";
   for(const id of uniq){
     const b=document.createElement("button"); b.className="av-it"+(id===S.avatar?" cur":"");
     const cv2=document.createElement("canvas"); cv2.width=44; cv2.height=44;
     b.appendChild(cv2); b.title=PK(id).name;
-    drawStatic(id,cv2,44,44,22,24,18,roleForm(id));
+    drawStatic(id,cv2,44,44,22,22,18,roleForm(id));
     b.addEventListener("click",()=>{ S.avatar=id; saveProgress(); renderProfile(); renderPlayerCard(); });
     pick.appendChild(b);
   }
@@ -5091,11 +5092,32 @@ function renderPartyBar(){
   }
 }
 const STARTER3=["bulbasaur","charmander","squirtle"];   // 御三家：100 金币直接解锁
+// ===== 进化链工具：图鉴按“进化解锁下一格”，无需重复捕捉 =====
+const DEX_NAME_ID={}; for(const k in POKEDEX){ DEX_NAME_ID[POKEDEX[k].name]=k; }
+const EVO_PREV={}; for(const k in POKEDEX){ const R=POKEDEX[k];
+  if(R.mid&&DEX_NAME_ID[R.mid]) EVO_PREV[DEX_NAME_ID[R.mid]]=k;
+  if(R.top&&DEX_NAME_ID[R.top]) EVO_PREV[DEX_NAME_ID[R.top]]=k; }
+function chainBase(id){ let c=id, seen=new Set();
+  while(EVO_PREV[c]&&!seen.has(c)){ seen.add(c); c=EVO_PREV[c]; } return c; }
+function chainOrder(id){ let c=id, o=1, seen=new Set();
+  while(EVO_PREV[c]&&!seen.has(c)){ seen.add(c); c=EVO_PREV[c]; o++; } return o; }
+function chainLen(base){ let c=base, n=1, seen=new Set();
+  while(c&&POKEDEX[c]&&(POKEDEX[c].mid||POKEDEX[c].top)&&!seen.has(c)){ seen.add(c); n++; c=DEX_NAME_ID[POKEDEX[c].mid||POKEDEX[c].top]; }
+  return n; }
+function chainProg(base,len){ const bp=S.roster[base]||0; let m=0, c=base;
+  for(let o=1;o<=len;o++){ if(S.roster[c]>0) m=Math.max(m,o); if(bp>=o) m=Math.max(m,o);
+    if(c&&POKEDEX[c]) c=DEX_NAME_ID[POKEDEX[c].mid||POKEDEX[c].top]; }
+  return m; }
+function ownedFor(id){
+  if(S.roster[id]>0) return true;
+  const base=chainBase(id), ord=chainOrder(id);
+  return ord>1 && (S.roster[base]||0)>=ord;
+}
 function renderCollection(){
   refreshMenuCoins();
-  const ownedCount = POKEDEX_KEYS.filter(id=>S.roster[id]).length;
+  const ownedCount = POKEDEX_KEYS.filter(id=>ownedFor(id)).length;
   $("col-coins").textContent=S.coins;
-  $("col-own").textContent = "已捕捉 "+ownedCount;
+  $("col-own").textContent = "已解锁 "+ownedCount;
   renderPartyBar();
   // 世代筛选
   const tabs=$("col-tabs"); tabs.innerHTML="";
@@ -5117,42 +5139,46 @@ function renderCollection(){
   const list = S.colGen==="all" ? POKEDEX_KEYS : POKEDEX_KEYS.filter(id=>PK(id).gen===+S.colGen);
   for(const id of list){
     const R=PK(id); const T=ATTR_TEXT[R.attr];
-    const form=roleForm(id);
-    const owned=!!S.roster[id];
+    const base=chainBase(id), ord=chainOrder(id), len=chainLen(base), prog=chainProg(base,len);
+    const owned=ownedFor(id);
+    const evoNext = owned && ord<len && prog===ord;          // 进化按钮只在“当前最高形态格”出现
+    const evolAble = !owned && ord>1 && prog>=ord-1;         // 链式前置已进化 → 本格“进化可得”
+    const form=roleForm(id);                                 // 战斗形态（用于 form-row 选中态）
     const card=document.createElement("div");
-    card.className="col-card"+(owned?"":" locked")+(S.shiny[id]?" shiny":"");
+    card.className="col-card"+(owned?"":" locked")+(evolAble?" evol-able":"")+(S.shiny[id]?" shiny":"");
     card.title = "进化链："+(R.mid?("→ "+R.mid+(R.top?(" → "+R.top):"")):"无进化");
     card.innerHTML=
       (S.shiny[id]?'<div class="col-tag">★</div>':'')+
       '<canvas class="col-av" width="52" height="52"></canvas>'+
-      '<div class="col-name">'+(owned?roleName(id):R.name)+'</div>'+
-      '<div class="col-attr">G'+R.gen+' · '+T.attr+'属性 · '+(owned?("形态 "+form+"/"+roleMaxForm(id)+(S.shiny[id]?" ★闪光":"")):"未捕捉")+'</div>'+
-      '<div class="col-skill">'+(owned?(T.skills[Math.min(form,3)-1]+" · "+T.desc):(STARTER3.includes(id)?"御三家 · 可金币解锁":"击败"+T.attr+"系 Boss 可捕捉"))+'</div>';
+      '<div class="col-name">'+R.name+'</div>'+
+      '<div class="col-attr">G'+R.gen+' · '+T.attr+'属性 · '+(owned?("形态 "+ord+"/"+len+(S.shiny[id]?" ★闪光":"")):(evolAble?"进化可得":"未捕捉"))+'</div>'+
+      '<div class="col-skill">'+(owned?(T.skills[Math.min(ord,3)-1]+" · "+T.desc):(evolAble?"进化解锁下一形态 · 击败"+T.attr+"系 Boss 可捕捉":(STARTER3.includes(id)?"御三家 · 可金币解锁":"击败"+T.attr+"系 Boss 可捕捉")))+'</div>';
     if(owned){
       const actions=document.createElement("div"); actions.className="col-actions";
       const fr=document.createElement("div"); fr.className="form-row";   // 战前形态选择：进化后初始形态保留
-      for(let f=1;f<=S.roster[id];f++){
+      const maxF=Math.max(S.roster[id]||0, S.roster[base]||0);
+      for(let f=1;f<=maxF;f++){
         const fb=document.createElement("button"); fb.className="form-btn"+(f===form?" cur":"");
         fb.textContent=f;
-        fb.title=roleName(id,f);
-        fb.addEventListener("click",()=>{ if(f===form) return; S.formPick[id]=f; saveProgress(); renderCollection(); });
+        fb.title=roleName(base,f);
+        fb.addEventListener("click",()=>{ if(f===form) return; S.formPick[base]=f; saveProgress(); renderCollection(); });
         fr.appendChild(fb);
       }
-      if(S.roster[id]>1){ actions.appendChild(fr); }
+      if(maxF>1){ actions.appendChild(fr); }
       const ev=document.createElement("button"); ev.className="btn-evolve";
-      const mf=roleMaxForm(id);
-      if(form>=mf){ ev.textContent="进化满"; ev.disabled=true; }
-      else{
-        const cost=ROLE_EVOLVE_COST[form];
+      if(evoNext){
+        const cost=ROLE_EVOLVE_COST[ord]||60;
         ev.textContent="进化 "+cost;
-          ev.addEventListener("click",()=>{
+        ev.addEventListener("click",()=>{
           if(S.coins<cost){ showToast("金币不足 · 还差 "+(cost-S.coins)+" 金币"); return; }
-          S.coins-=cost; S.roster[id]=form+1; S.formPick[id]=form+1;   // 最高形态解锁 · 初始形态保留可随时切回
+          S.coins-=cost; S.roster[base]=ord+1; S.formPick[base]=ord+1;   // 解锁下一形态 · 初始形态保留可随时切回
           saveProgress();
           checkAchieves();
           renderCollection();
         });
       }
+      else if(ord>=len){ ev.textContent="进化满"; ev.disabled=true; }
+      else { ev.textContent="已进化"; ev.disabled=true; }
       const mz=document.createElement("button"); mz.className="btn-pick";
       mz.textContent = id===S.activeRole ? "主战" : "设主战";
       if(id===S.activeRole){ mz.classList.add("used"); }
@@ -5187,7 +5213,7 @@ function renderCollection(){
         g2.clearRect(0,0,52,52);
         if(owned){
           g2.save(); g2.beginPath(); g2.arc(26,26,rad-1.5,0,6.28); g2.clip();
-          drawStatic(id,cv,52,52,26,30,17,form,false,paintBadge);
+          drawStatic(id,cv,52,52,26,30,17,1,false,paintBadge);
           g2.restore();
           g2.strokeStyle="#f8fafc"; g2.lineWidth=2.5; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke();
           g2.strokeStyle="rgba(2,6,23,.55)"; g2.lineWidth=1.4; g2.beginPath(); g2.arc(26,26,rad,0,6.28); g2.stroke();

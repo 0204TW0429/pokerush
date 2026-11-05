@@ -1721,7 +1721,7 @@ const GODS_2 = [
   { name:"虚吾伊德", attr:"poison", id:"nihilego" }, { name:"费洛美螂", attr:"bug",   id:"pheromosa" },
   { name:"卡璞·蝶蝶",attr:"fairy",  id:"tapu-lele" },{ name:"雷吉奇卡斯",attr:"normal",id:"regigigas" },
 ];
-// 一级神（每 10 关终极 Boss · 随机，原著属性）
+// 一级神（每 10 关终极 Boss · 随机，经典属性）
 const GODS_1 = [
   { name:"超梦",   attr:"psychic", id:"mewtwo" },   { name:"凤王",     attr:"fire",    id:"ho-oh" },
   { name:"洛奇亚", attr:"flying",  id:"lugia" },    { name:"固拉多",   attr:"ground",  id:"groudon" },
@@ -1753,17 +1753,17 @@ function ensureTierSkills(id){       // 神兽/幻兽/普通精灵自带品质�
   }
 }
 
-/* ===== Mega 石 / 极巨化 / Z 招式（金币购买 · 原著契合） ===== */
-const MEGA_COST=888, DYNA_COST=10000, Z_COST=3000;   // 原著商店价：Mega 石 888 / Z 招式手环 3000/个 / 极巨化手环 10000
+/* ===== Mega 石 / 极巨化 / Z 招式（金币购买 · 经典契合） ===== */
+const MEGA_COST=888, DYNA_COST=10000, Z_COST=3000;   // 经典商店价：Mega 石 888 / Z 招式手环 3000/个 / 极巨化手环 10000
 const BALLS=[ {id:"great",name:"高级球",cost:3000,mult:1.5,desc:"精灵球伤害 ×1.5 · 更易捕捉" },
               {id:"ultra",name:"超级球",cost:7000,mult:2,desc:"精灵球伤害 ×2 · 更难捕捉的也能抓" },
               {id:"master",name:"大师球",cost:15000,mult:3,desc:"精灵球伤害 ×3 · 必中捕捉" } ];
 function ballMult(){ const b=S.ball||"none"; return b==="master"?3: b==="ultra"?2: b==="great"?1.5:1; }
 function ballName(){ const b=S.ball||"none"; return b==="master"?"大师球": b==="ultra"?"超级球": b==="great"?"高级球":"精灵球"; }
 const DYNA_SET={ venusaur:1,charizard:1,blastoise:1,butterfree:1,pidgeot:1,gengar:1,machamp:1,kingler:1,lapras:1,eevee:1,snorlax:1,
-  corviknight:1,grimmsnarl:1,alcremie:1,copperajah:1,duraludon:1,toxtricity:1,centiskorch:1,sandaconda:1,cinderace:1,inteleon:1,rillaboom:1,melmetal:1,hatterene:1 };  // 原著可超极巨（Gigantamax）名单
+  corviknight:1,grimmsnarl:1,alcremie:1,copperajah:1,duraludon:1,toxtricity:1,centiskorch:1,sandaconda:1,cinderace:1,inteleon:1,rillaboom:1,melmetal:1,hatterene:1 };  // 经典可超极巨（Gigantamax）名单
 function canDyna(id){ return !!DYNA_SET[id]; }
-// 原著可 Mega 进化名单（第 6 代起引入，含世代限定形态）
+// 经典可 Mega 进化名单（第 6 代起引入，含世代限定形态）
 const MEGA_SET={ venusaur:1,charizard:1,blastoise:1,beedrill:1,pidgeot:1,alakazam:1,gengar:1,kangaskhan:1,pinsir:1,scyther:1,heracross:1,houndoom:1,slowbro:1,aerodactyl:1,gyarados:1,ampharos:1,scizor:1,steelix:1,tyranitar:1,sceptile:1,blaziken:1,swampert:1,gardevoir:1,sableye:1,mawile:1,aggron:1,medicham:1,manectric:1,sharpedo:1,camerupt:1,altaria:1,banette:1,absol:1,salamence:1,metagross:1,latias:1,latios:1,rayquaza:1,lopunny:1,garchomp:1,lucario:1,abomasnow:1,gallade:1,audino:1,diancie:1,glalie:1 };
 const MEGA_TEXT={ venusaur:"超级妙蛙花",charizard:"超级喷火龙",blastoise:"超级水箭龟",beedrill:"超级大针蜂",pidgeot:"超级大比鸟",alakazam:"超级胡地",gengar:"超级耿鬼",kangaskhan:"超级袋兽",pinsir:"超级凯罗斯",scyther:"超级飞天螳螂",heracross:"超级赫拉克罗斯",houndoom:"超级黑鲁加",slowbro:"超级呆壳兽",aerodactyl:"超级化石翼龙",gyarados:"超级暴鲤龙",ampharos:"超级电龙",scizor:"超级巨钳螳螂",steelix:"超级大钢蛇",tyranitar:"超级班基拉斯",sceptile:"超级蜥蜴王",blaziken:"超级火焰鸡",swampert:"超级巨沼怪",gardevoir:"超级沙奈朵",sableye:"超级勾魂眼",mawile:"超级大嘴娃",aggron:"超级波士可多拉",medicham:"超级恰雷姆",manectric:"超级雷电兽",sharpedo:"超级巨牙鲨",camerupt:"超级喷火驼",altaria:"超级七夕青鸟",banette:"超级诅咒娃娃",absol:"超级阿勃梭鲁",salamence:"超级暴飞龙",metagross:"超级巨金怪",latias:"超级拉帝亚斯",latios:"超级拉帝欧斯",rayquaza:"超级烈空坐",lopunny:"超级长耳兔",garchomp:"超级烈咬陆鲨",lucario:"超级路卡利欧",abomasnow:"超级暴雪王",gallade:"超级艾路雷朵",audino:"超级差不多娃娃",diancie:"超级蒂安希",glalie:"超级冰鬼护" };
 const Z_MOVE_BY_ATTR={ normal:"究极冲击", fire:"超强极限爆焰弹", water:"超级水流大炮", grass:"究极无敌炮轰落花", elec:"千万伏特", ice:"激狂大地万里冰", fight:"全力无双激烈拳", poison:"最强酸性炸弹", ground:"究极大地破坏激震", flying:"极速俯冲轰炸", psychic:"究极精神冲击", bug:"究极吸力飞转", rock:"究极大地破坏", ghost:"究极幽魂幽灵", dragon:"究极龙之雷霆", dark:"究极暗影吞噬", steel:"究极金属炮轰", fairy:"究极月亮之力" };
@@ -3552,7 +3552,7 @@ function bgDecor(px,py,seed,draw){  // 视差装饰：以 seed 生成固定分�
 }
 function drawBackground(px,py){
   const cyc = sceneCycle();
-  // 20 个宝可梦原著风格场景：天空 / 地面 / 装饰
+  // 20 个宝可梦经典风格场景：天空 / 地面 / 装饰
   const P = [
     { sky:["#081f12","#0d2f1a"], g:"#14532d", g2:"#166534", name:"真新镇森林" },
     { sky:["#0a1f2e","#123a4a"], g:"#166534", g2:"#1e7a4e", name:"若叶草原" },
@@ -4232,9 +4232,9 @@ function drawNeutral(x,y,r,rot,form){ // 普通系：猫耳 + 胡须 + 卷尾（
   CTX.stroke();
   CTX.restore();
 }
-/* ===== Q 版原著风绘制（大头圆身 · 特征元素按原著） ===== */
+/* ===== Q 版经典风绘制（大头圆身 · 特征元素按经典） ===== */
 const Q_FEAT={
-  "reuniclus":{c:"#4ade80",b:"#dcfce7",parts:[["eye","red",0,-0.35,0.18,"#f87171"],["tentacle","",-0.55,0.25,0.6,"#4ade80"],["tentacle","",0.55,0.25,0.6,"#4ade80"]]},   // 人造细胞卵 · 原著绿色凝胶体
+  "reuniclus":{c:"#4ade80",b:"#dcfce7",parts:[["eye","red",0,-0.35,0.18,"#f87171"],["tentacle","",-0.55,0.25,0.6,"#4ade80"],["tentacle","",0.55,0.25,0.6,"#4ade80"]]},   // 人造细胞卵 · 经典绿色凝胶体
   "solosis":{c:"#86efac",b:"#dcfce7",parts:[["eye","red",0,-0.35,0.2,"#f87171"]]},
   "duosion":{c:"#6ee7b7",b:"#d1fae5",parts:[["eye","red",0,-0.35,0.22,"#f87171"],["tentacle","",-0.5,0.3,0.5,"#6ee7b7"],["tentacle","",0.5,0.3,0.5,"#6ee7b7"]]},
   "sandaconda":{c:"#d6a15c",b:"#fde8c9",body:"snake",parts:[["spike","",-0.55,-0.3,0.5,"#8a5a2b"],["spike","",0.55,-0.3,0.5,"#8a5a2b"],["tail","curl",0,0.6,0.4,"#d6a15c"]]},   // 沙包蛇 · 蛇形

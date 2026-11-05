@@ -1779,7 +1779,7 @@ function castZMove(){
   const nm=zMoveName();
   showBanner("Z 招式 · "+nm);
   sndExplode(true);
-  castBlast(lvl, 560, 2.6, ATTR_TEXT[attr].color, {});
+  castBlast(lvl, 560, 2.6, ATTR_TEXT[attr].color, {shape:"ring"});
   burst(S.player.x,S.player.y,"#fff",30,320);
   for(const e of S.enemies){ if(e.dead) continue;
     if(attr==="fire") e.burn={t:4,dps:8};
@@ -2001,7 +2001,7 @@ function buildStars(){
 function newPlayer(){
   return { x:W/2, y:H/2, r:CONFIG.player.radius, hp:CONFIG.player.hp, maxHp:CONFIG.player.hp,
     angle:-Math.PI/2, inv:0, flash:0, droneLvl:0, multiLvl:0, fireLvl:0, dmgLvl:0, pierceLvl:0,
-    shieldLvl:1, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1, armor:1 };
+    shieldLvl:0, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1, armor:1 };
 }
 function syncDrones(){
   const n = S.player.droneCount;
@@ -2157,10 +2157,11 @@ function finishStage(){
   S.stage++;
   S.stageTimer = CONFIG.level.duration;
   S.enemies.length = 0; S.bullets.length = 0; S.puddles.length = 0; S.ebullets.length = 0; S.bossAoEs.length = 0;
+  if(S.fx) S.fx.length = 0;
   S.best = Math.max(S.best||0, S.stage-1);
   checkAchieves();
   const p = S.player;
-  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 3 层 · 装甲每关 +1（最多 3 层）
+  p.hp = p.maxHp; p.shieldLvl = 150; p.armor = Math.min(3, p.armor+1);      // 护盾补满 150 吸收值 · 装甲每关 +1（最多 3 次）
   refreshHpUI(); syncShieldUI(); syncArmorUI();
   S.dyna = false; S.dynaT = 0; S.dynaCharges = 1;               // 每关 1 次极巨化
   updatePowerUI();
@@ -2603,11 +2604,19 @@ function nearestEnemy(x,y){
 function playerDamage(dmg,bossSkill){
   const p=S.player;
   if(S.shieldSurgeT>0 || p.inv>0) return;                     // 临时护盾（护盾涌能）期间免疫
-  if((bossSkill||dmg>40) && p.armor>0){                      // 装甲：抵挡 Boss 技能与超过 40 的伤害
+  if(bossSkill && p.armor>0){                                 // 装甲：只抵挡 Boss 技能伤害，最多 3 次
     p.armor--; p.inv=0.8; syncArmorUI(); burst(p.x,p.y,"#fbbf24",18,240); sndHit(true); return;
   }
-  if(p.shieldLvl>0){                                          // 护盾：抵挡一切伤害（消耗 1 层）
-    p.shieldLvl--; p.inv=0.8; syncShieldUI(); burst(p.x,p.y,"#38bdf8",14,200); sndHit(true); return;
+  if(p.shieldLvl>0){                                          // 护盾：吸收伤害数值（满值 150，吸完即破）
+    const absorb=Math.min(p.shieldLvl,dmg);
+    p.shieldLvl-=absorb; syncShieldUI();
+    burst(p.x,p.y,"#38bdf8",14,200); sndHit(true);
+    const rest=dmg-absorb;
+    if(rest>0.01){
+      p.hp-=rest; p.inv=0.5; p.flash=0.25; S.dmgFlash=0.3; refreshHpUI();
+      if(p.hp<=0){ gameOver(); }
+    } else { p.inv=0.8; }
+    return;
   }
   p.hp-=dmg; p.inv=0.5; p.flash=0.25; S.dmgFlash=0.3; sndHit(false); refreshHpUI();
   if(p.hp<=0){ gameOver(); }
@@ -2737,9 +2746,9 @@ function availableUpgrades(){
     { id:"pierce", name:"贯穿弹", desc:"子弹多穿透 1 个敌人", max:2, rarity:2,
       lvl:p.pierceLvl, maxed:()=>p.pierceLvl>=2,
       apply(){ p.pierceLvl++; } },
-    { id:"shield", name:"能量护盾", desc:"获得 1 层护盾，挡一次伤害", max:3, rarity:1,
-      lvl:p.shieldLvl, maxed:()=>p.shieldLvl>=3,
-      apply(){ p.shieldLvl++; syncShieldUI(); } },
+    { id:"shield", name:"能量护盾", desc:"护盾能量 +50（吸收伤害）", max:3, rarity:1,
+      lvl:Math.round(p.shieldLvl/50)>=3?3:Math.floor(p.shieldLvl/50), maxed:()=>p.shieldLvl>=150,
+      apply(){ p.shieldLvl=Math.min(150,p.shieldLvl+50); syncShieldUI(); } },
     { id:"speed", name:"矢量推进", desc:"移动速度 +12%", max:3, rarity:0,
       lvl:p.speedLvl, maxed:()=>p.speedLvl>=3,
       apply(){ p.speedLvl++; } },
@@ -3228,6 +3237,7 @@ function castFireball(lvl){
 function castFrost(lvl){
   burst(S.player.x,S.player.y,"#7dd3fc",26,240);
   const r = 120+22*lvl;
+  spawnFx("ice", S.player.x, S.player.y, r, "#7dd3fc", 0.6);
   for(const e of S.enemies){
     if(e.dead) continue;
     if(dist(e,S.player)<r+e.r){ e.slowT=Math.max(e.slowT,1.2); e.hp-=8*lvl; if(e.hp<=0) killEnemy(e); }
@@ -3237,6 +3247,7 @@ function castFrost(lvl){
 function castLightning(lvl){
   const t=nearestEnemy(S.player.x,S.player.y); if(!t) { S.skillCd.lightning=1; return; }
   const chain=2+lvl; let cur=t, prev=null;
+  spawnFx("bolt", S.player.x, S.player.y, 0, "#fde047", 0.3, {x2:t.x, y2:t.y});
   for(let k=0;k<chain && cur;k++){
     burst(cur.x,cur.y,"#fde047",8,150);
     cur.hp-=14*lvl; applyAttr(cur,"elec","elec");
@@ -3252,11 +3263,13 @@ function castLightning(lvl){
 }
 function castBlackhole(lvl){
   S.holes.push({ x:S.player.x, y:S.player.y, r:150+24*lvl, t:1.1 });
+  spawnFx("void", S.player.x, S.player.y, 150+24*lvl, "#a78bfa", 0.9);
   burst(S.player.x,S.player.y,"#a78bfa",20,200);
   S.skillCd.blackhole = Math.max(1.8, SKILLS[6].cd - lvl*0.8);
 }
 function castBarrage(lvl){
   const n=12;
+  spawnFx("sparkle", S.player.x, S.player.y, 120, "#f472b6", 0.45);
   for(let i=0;i<n;i++) castSkillBullet(S.player.x,S.player.y,i/n*Math.PI*2,300,10*lvl,4,0,null,null,1.4);
   burst(S.player.x,S.player.y,"#f472b6",14,200);
   S.skillCd.barrage = Math.max(1.6, SKILLS[7].cd - lvl*0.8);
@@ -3270,6 +3283,7 @@ function castOrbital(lvl){
 function castBlast(lvl, range, dmgMul, color, opt){
   const p=S.player;
   burst(p.x,p.y,color,22,220);
+  spawnFx((opt&&opt.shape)||"ring", p.x, p.y, range, color, 0.6);
   for(const e of S.enemies){
     if(e.dead || dist(e,p)>range+e.r) continue;
     e.hp -= CONFIG.drone.damage*dmgMul*lvl;
@@ -3286,6 +3300,7 @@ function castBlast(lvl, range, dmgMul, color, opt){
 function castPierce(lvl, dmgMul, color, type, spd, pierce, attr){
   const p=S.player, t=nearestEnemy(p.x,p.y);
   const ang=t?Math.atan2(t.y-p.y,t.x-p.x):rand(0,Math.PI*2);
+  spawnFx("beam", p.x, p.y, 420, color, 0.32, { ang:ang });
   castSkillBullet(p.x,p.y,ang,spd||760,CONFIG.drone.damage*dmgMul*lvl,8,pierce||6,attr||null,type||"orb",2.4);
   burst(p.x,p.y,color,8,140);
 }
@@ -3298,6 +3313,7 @@ function castChainBase(lvl, hits, dmgMul, attr){
   const p=S.player;
   let t=nearestEnemy(p.x,p.y), prev=null;
   for(let k=0;k<hits && t;k++){
+    spawnFx("chain", prev?prev.x:p.x, prev?prev.y:p.y, 0, "#fde047", 0.28, {x2:t.x, y2:t.y});
     burst(t.x,t.y,"#fde047",8,150);
     t.hp -= CONFIG.drone.damage*dmgMul*lvl;
     applyAttr(t, attr||"elec", "elec");
@@ -3314,6 +3330,7 @@ function castMeteor(lvl){ S.skillCd.meteor=Math.max(2,8.5-lvl*0.6);
     const e=es[Math.floor(Math.random()*es.length)];
     const tx=e?e.x:S.player.x+rand(-200,200), ty=e?e.y:S.player.y+rand(-200,200);
     burst(tx,ty,"#f97316",18,210);
+    spawnFx("flame", tx, ty, 80, "#f97316", 0.5);
     for(const o of S.enemies){ if(o.dead) continue; if(dist(o,{x:tx,y:ty})<72+o.r){ o.hp-=CONFIG.drone.damage*1.3*lvl; applyAttr(o,"fire","fire"); if(o.hp<=0) killEnemy(o); } }
   }
 }
@@ -3322,28 +3339,29 @@ function castSolar(lvl){ S.skillCd.solarflare=Math.max(2,9-lvl*0.6);
   const ang=t?Math.atan2(t.y-p.y,t.x-p.x):rand(0,Math.PI*2);
   castSkillBullet(p.x,p.y,ang,300,CONFIG.drone.damage*2.2*lvl,14,3,null,"fb",2.6);
   burst(p.x,p.y,"#fde047",16,200);
+  spawnFx("sparkle", p.x, p.y, 130, "#fde047", 0.5);
 }
 function castFrostwave(lvl){ S.skillCd.frostwave=Math.max(1.8,7.5-lvl*0.7);
-  castBlast(lvl,260,0.9,"#7dd3fc",{slow:2.2});
+  castBlast(lvl,260,0.9,"#7dd3fc",{slow:2.2,shape:"ice"});
 }
 function castStorm(lvl){ S.skillCd.storm=Math.max(2,8-lvl*0.7);
   castChainBase(lvl,5,0.9,"elec");
 }
 function castPoisonCloud(lvl){ S.skillCd.poisoncloud=Math.max(2,8.5-lvl*0.7);
-  castBlast(lvl,240,0.8,"#a78bfa",{poison:1});
+  castBlast(lvl,240,0.8,"#a78bfa",{poison:1,shape:"cloud"});
 }
 function castQuake(lvl){ S.skillCd.earthquake=Math.max(2,9-lvl*0.7);
-  castBlast(lvl,320,1.1,"#d6a15c",{stun:0.8});
+  castBlast(lvl,320,1.1,"#d6a15c",{stun:0.8,shape:"quake"});
 }
 function castPhantom(lvl){ S.skillCd.phantomclaw=Math.max(1.8,7-lvl*0.6);
   castPierce(lvl,1.2,"#818cf8",null,820,99,null);
-  castBlast(S.player.x,S.player.y,220,0.6,"#818cf8",{fear:1});
+  castBlast(S.player.x,S.player.y,220,0.6,"#818cf8",{fear:1,shape:"slash"});
 }
 function castDragon(lvl){ S.skillCd.dragonbreath=Math.max(1.8,7.5-lvl*0.6);
-  castBlast(lvl,300,1.2,"#6366f1",{slow:1.2});
+  castBlast(lvl,300,1.2,"#6366f1",{slow:1.2,shape:"wave"});
 }
 function castFairy(lvl){ S.skillCd.fairyburst=Math.max(2,8-lvl*0.6);
-  castBlast(lvl,280,1.0,"#f9a8d4",{charm:1.6});
+  castBlast(lvl,280,1.0,"#f9a8d4",{charm:1.6,shape:"sparkle"});
 }
 function castPlasma(lvl){ S.skillCd.plasmabeam=Math.max(2,8.5-lvl*0.7);
   castPierce(lvl,1.4,"#38bdf8",null,880,9,"elec");
@@ -3360,20 +3378,20 @@ function castTwin(lvl){ S.skillCd.twinbeam=Math.max(1.8,7-lvl*0.6);
   castPierce(lvl,1.1,"#fbbf24",null,800,6,null);
 }
 function castNova(lvl){ S.skillCd.novaflare=Math.max(2.4,9.5-lvl*0.8);
-  castBlast(lvl,420,1.6,"#fb923c",{burn:1});
+  castBlast(lvl,420,1.6,"#fb923c",{burn:1,shape:"flame"});
 }
 function castGiga(lvl){ S.skillCd.gigadrain=Math.max(2,8-lvl*0.6);
   castPierce(lvl,1.2,"#4ade80",null,820,6,"grass");
-  castBlast(S.player.x,S.player.y,260,0.7,"#4ade80",{heal:1.2});
+  castBlast(S.player.x,S.player.y,260,0.7,"#4ade80",{heal:1.2,shape:"leaf"});
 }
 function castOverheat(lvl){ S.skillCd.overheat=Math.max(2,8-lvl*0.6);
-  castBlast(lvl,300,1.2,"#fb923c",{burn:1.4});
+  castBlast(lvl,300,1.2,"#fb923c",{burn:1.4,shape:"flame"});
 }
 function castHydro(lvl){ S.skillCd.hydro=Math.max(1.8,7.5-lvl*0.6);
   castPierce(lvl,1.2,"#38bdf8",null,820,6,"water");
 }
 function castBlizzard(lvl){ S.skillCd.blizzard=Math.max(2,8.5-lvl*0.7);
-  castBlast(lvl,340,1.2,"#bae6fd",{slow:2.6});
+  castBlast(lvl,340,1.2,"#bae6fd",{slow:2.6,shape:"ice"});
 }
 function castThunder(lvl){ S.skillCd.thunderbolt=Math.max(1.8,7-lvl*0.6);
   castChainBase(lvl,7,1.0,"elec");
@@ -3407,8 +3425,8 @@ function castNebula(lvl){ S.skillCd.nebula=Math.max(1.8,7.4-lvl*0.4);
   for(let i=0;i<10;i++) castSkillBullet(p.x,p.y,i/10*Math.PI*2,340,14*lvl,4,0,null,null,1.3);
 }
 function castSuper(lvl){ S.skillCd.supernova=Math.max(2.4,8.5-lvl*0.6);
-  castBlast(lvl,380,1.8,"#fde047",{burn:1.2});
-  castBlast(S.player.x,S.player.y,300,1.2,"#fb923c",{});
+  castBlast(lvl,380,1.8,"#fde047",{burn:1.2,shape:"flame"});
+  castBlast(S.player.x,S.player.y,300,1.2,"#fb923c",{shape:"flame"});
   for(let i=0;i<4;i++){
     const tx=S.player.x+rand(-260,260), ty=S.player.y+rand(-260,260);
     burst(tx,ty,"#f97316",18,210);
@@ -3416,17 +3434,17 @@ function castSuper(lvl){ S.skillCd.supernova=Math.max(2.4,8.5-lvl*0.6);
   }
 }
 function castPolar(lvl){ S.skillCd.polar=Math.max(2.4,8.5-lvl*0.6);
-  castBlast(lvl,460,1.8,"#e0f2fe",{slow:3});
+  castBlast(lvl,460,1.8,"#e0f2fe",{slow:3,shape:"ice"});
 }
 function castTempest(lvl){ S.skillCd.tempest=Math.max(2.4,8-lvl*0.6);
   castChainBase(lvl,9,1.2,"elec");
-  castBlast(S.player.x,S.player.y,340,1.2,"#fde047",{});
+  castBlast(S.player.x,S.player.y,340,1.2,"#fde047",{shape:"bolt"});
 }
 function castHyper(lvl){ S.skillCd.hyperbeam=Math.max(2.6,9-lvl*0.6);
   castPierce(lvl,2.6,"#f472b6",null,1100,99,null);
 }
 function castApoc(lvl){ S.skillCd.apocalypse=Math.max(2.8,10-lvl*0.7);
-  castBlast(lvl,520,2.2,"#a78bfa",{slow:2});
+  castBlast(lvl,520,2.2,"#a78bfa",{slow:2,shape:"void"});
   for(let i=0;i<6;i++){
     const tx=S.player.x+rand(-400,400), ty=S.player.y+rand(-400,400);
     burst(tx,ty,"#6366f1",22,240);
@@ -3445,8 +3463,8 @@ function tickSkills(dt){
     if(lvl<=0) continue;
     if(id==="sacred"){ if(p.hp<p.maxHp){ p.hp=Math.min(p.maxHp,p.hp+2*dt); refreshHpUI(); } }
     if(id==="overclock" && cd.overclock<=0){ cd.overclock=Math.max(2,11-lvl); S.buff.oc=3; }
-    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
-    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); } }
+    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<150){ p.shieldLvl=Math.min(150,p.shieldLvl+40); syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
+    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<150){ p.shieldLvl=Math.min(150,p.shieldLvl+40); syncShieldUI(); } }
     if(id==="bulwark" && cd.bulwark<=0){ cd.bulwark=Math.max(6,14-lvl*3); if(p.armor<3){ p.armor++; syncArmorUI(); burst(p.x,p.y,"#fbbf24",12,160); } }
     if(id==="shield_surge" && cd.shield_surge<=0){ cd.shield_surge=Math.max(8,18-lvl*4); S.shieldSurgeT=2.5; }
     const fn=SKILL_FN[id];
@@ -3505,8 +3523,8 @@ function refreshHpUI(){
 function syncShieldUI(){
   const p=S.player;
   $("shield-row").hidden = false;
-  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/3,0,1)+")";
-  $("shield-num").textContent=(p.shieldLvl||0)+" 层";
+  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/150,0,1)+")";
+  $("shield-num").textContent=Math.round(p.shieldLvl||0)+" / 150";
 }
 function syncArmorUI(){
   const p=S.player;
@@ -4774,13 +4792,172 @@ function drawDrones(){
     drawBall(x,y,d.flash>0);
   }
 }
+const ATTR_STYLE={ elec:"#fde047", fire:"#fb923c", water:"#38bdf8", grass:"#4ade80", ice:"#7dd3fc",
+  psychic:"#c084fc", normal:"#fde68a", dark:"#a78bfa", fairy:"#f472b6", fighting:"#f97316",
+  flying:"#a5b4fc", poison:"#c084fc", ground:"#d6a15c", rock:"#a8a29e", bug:"#a3e635",
+  ghost:"#8b5cf6", dragon:"#6366f1", steel:"#cbd5e1" };
+function fxColor(c){ return c || "#fde68a"; }
+function spawnFx(kind,x,y,r,color,life,extra){
+  if(!S.fx) S.fx=[];
+  S.fx.push({ kind:kind||"ring", x:x, y:y, r:r||120, color:fxColor(color), t:0, life:life||0.55,
+             ang:(extra&&extra.ang)||0, x2:(extra&&extra.x2), y2:(extra&&extra.y2) });
+}
 function drawBullets(){
   for(const b of S.bullets){
-    glow("#fde68a");
-    CTX.strokeStyle="#fde68a"; CTX.lineWidth=3; CTX.lineCap="round";
-    CTX.beginPath();
-    CTX.moveTo(b.x,b.y); CTX.lineTo(b.x-b.vx*0.02,b.y-b.vy*0.02);
-    CTX.stroke();
+    const col=ATTR_STYLE[b.attr]||"#fde68a";
+    const ang=Math.atan2(b.vy,b.vx);
+    const kx=Math.cos(ang), ky=Math.sin(ang);
+    const px=-ky, py=kx;                                     // 垂直方向
+    CTX.save();
+    CTX.globalAlpha=0.85; CTX.strokeStyle=col; CTX.lineWidth=3; CTX.lineCap="round";
+    CTX.beginPath(); CTX.moveTo(b.x,b.y); CTX.lineTo(b.x-kx*(b.type==="beam"?26:14),b.y-ky*(b.type==="beam"?26:14)); CTX.stroke();
+    CTX.globalAlpha=1;
+    CTX.fillStyle=col; CTX.strokeStyle=col;
+    const R=b.r||3.5;
+    if(b.type==="fb"){                                       // 火球：实心球 + 尾焰
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*1.6,0,6.28); CTX.fill();
+      CTX.fillStyle="rgba(253,224,71,.9)";
+      CTX.beginPath(); CTX.arc(b.x+kx*R*0.4,b.y+ky*R*0.4,R*0.8,0,6.28); CTX.fill();
+    } else if(b.type==="beam"||b.type==="orb"){               // 光束弹：长条
+      CTX.beginPath();
+      CTX.moveTo(b.x-kx*R*2,b.y-ky*R*2); CTX.lineTo(b.x+px*R,b.y+py*R);
+      CTX.lineTo(b.x+kx*R*2,b.y+ky*R*2); CTX.lineTo(b.x-px*R,b.y-py*R);
+      CTX.closePath(); CTX.fill();
+    } else if(b.attr==="elec"){                              // 电系：锯齿闪电
+      CTX.lineWidth=2.5;
+      CTX.beginPath();
+      CTX.moveTo(b.x-kx*R*1.6,b.y-ky*R*1.6);
+      CTX.lineTo(b.x-kx*R*0.5+px*R,b.y-ky*R*0.5+py*R);
+      CTX.lineTo(b.x+kx*R*0.5-px*R,b.y+ky*R*0.5-py*R);
+      CTX.lineTo(b.x+kx*R*1.6,b.y+ky*R*1.6);
+      CTX.stroke();
+    } else if(b.attr==="fire"){                               // 火系：火舌
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*1.3,0,6.28); CTX.fill();
+      CTX.fillStyle="rgba(253,186,116,.85)";
+      CTX.beginPath(); CTX.moveTo(b.x+kx*R*2,b.y+ky*R*2);
+      CTX.lineTo(b.x+px*R,b.y+py*R); CTX.lineTo(b.x-px*R,b.y-py*R); CTX.closePath(); CTX.fill();
+    } else if(b.attr==="ice"){                                // 冰系：六角冰晶
+      for(let j=0;j<6;j++){ const a=j/6*6.28+0.3;
+        CTX.beginPath(); CTX.moveTo(b.x,b.y);
+        CTX.lineTo(b.x+Math.cos(a)*R*1.7,b.y+Math.sin(a)*R*1.7); CTX.stroke(); }
+    } else if(b.attr==="grass"){                              // 草系：叶片菱形
+      CTX.beginPath(); CTX.moveTo(b.x+kx*R*1.9,b.y+ky*R*1.9); CTX.lineTo(b.x+px*R*0.9,b.y+py*R*0.9);
+      CTX.lineTo(b.x-kx*R*1.9,b.y-ky*R*1.9); CTX.lineTo(b.x-px*R*0.9,b.y-py*R*0.9);
+      CTX.closePath(); CTX.fill();
+    } else if(b.attr==="water"){                              // 水系：水滴
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*1.2,0,6.28); CTX.fill();
+      CTX.fillStyle="rgba(186,230,253,.8)";
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*0.5,0,6.28); CTX.fill();
+    } else if(b.attr==="psychic"||b.attr==="poison"||b.attr==="ghost"||b.attr==="dark"||b.attr==="dragon"){  // 超能：双环
+      CTX.lineWidth=2;
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*1.4,0,6.28); CTX.stroke();
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*0.6,0,6.28); CTX.fill();
+    } else {                                                  // 其他：圆弹
+      CTX.beginPath(); CTX.arc(b.x,b.y,R*1.25,0,6.28); CTX.fill();
+    }
+    CTX.restore();
+  }
+}
+function drawFx(){
+  const list=(S.fx||[]);
+  for(let i=list.length-1;i>=0;i--){
+    const f=list[i];
+    f.t += 1/60;
+    if(f.t>=f.life){ list.splice(i,1); continue; }
+    const k=f.t/f.life, a=1-k;
+    CTX.save();
+    if(f.kind==="ice"){
+      CTX.strokeStyle="rgba(125,211,252,"+(a*0.9)+")"; CTX.lineWidth=3;
+      CTX.beginPath(); CTX.arc(f.x,f.y,f.r*(0.3+k*0.75),0,6.28); CTX.stroke();
+      for(let j=0;j<10;j++){ const ang=j/10*6.28+k*1.2, rr=f.r*(0.3+k*0.75);
+        CTX.strokeStyle="rgba(224,242,254,"+a+")"; CTX.lineWidth=2;
+        CTX.beginPath(); CTX.moveTo(f.x+Math.cos(ang)*rr, f.y+Math.sin(ang)*rr);
+        CTX.lineTo(f.x+Math.cos(ang)*(rr+12), f.y+Math.sin(ang)*(rr+12)); CTX.stroke(); }
+    } else if(f.kind==="flame"){
+      for(let j=0;j<3;j++){
+        const cx=f.x+(j-1)*f.r*0.35, hh=f.r*(0.4+k*0.5);
+        CTX.fillStyle="rgba(251,146,60,"+(a*0.75)+")";
+        CTX.beginPath();
+        CTX.moveTo(cx-f.r*0.16,f.y+f.r*0.18);
+        CTX.quadraticCurveTo(cx, f.y-hh, cx+f.r*0.16, f.y+f.r*0.18);
+        CTX.closePath(); CTX.fill();
+        CTX.fillStyle="rgba(253,224,71,"+(a*0.55)+")";
+        CTX.beginPath();
+        CTX.moveTo(cx-f.r*0.08,f.y+f.r*0.15);
+        CTX.quadraticCurveTo(cx, f.y-hh*0.6, cx+f.r*0.08, f.y+f.r*0.15);
+        CTX.closePath(); CTX.fill();
+      }
+    } else if(f.kind==="bolt"||f.kind==="chain"){
+      const x0=f.x, y0=f.y, x1=(f.x2!=null?f.x2:f.x+Math.cos(f.ang)*f.r), y1=(f.y2!=null?f.y2:f.y+Math.sin(f.ang)*f.r);
+      CTX.strokeStyle="rgba(253,224,71,"+(a*0.95)+")"; CTX.lineWidth=3; CTX.shadowColor="#fde047"; CTX.shadowBlur=10;
+      CTX.beginPath(); CTX.moveTo(x0,y0);
+      const seg=6;
+      for(let j=1;j<=seg;j++){
+        const tt=j/seg, nx=x0+(x1-x0)*tt, ny=y0+(y1-y0)*tt;
+        CTX.lineTo(nx + (Math.random()-0.5)*10, ny + (Math.random()-0.5)*10);
+      }
+      CTX.stroke(); CTX.shadowBlur=0;
+      CTX.strokeStyle="rgba(255,255,255,"+(a*0.7)+")"; CTX.lineWidth=1.4;
+      CTX.beginPath(); CTX.moveTo(x0,y0); CTX.lineTo(x1,y1); CTX.stroke();
+    } else if(f.kind==="cloud"){
+      CTX.globalAlpha=a*0.55; CTX.fillStyle=f.color;
+      for(let j=0;j<5;j++){ const ang=j/5*6.28+k*2, rr=f.r*0.45;
+        CTX.beginPath(); CTX.arc(f.x+Math.cos(ang)*rr, f.y+Math.sin(ang)*rr, f.r*0.42,0,6.28); CTX.fill(); }
+      CTX.globalAlpha=1;
+    } else if(f.kind==="quake"){
+      CTX.strokeStyle="rgba(214,161,92,"+(a*0.9)+")"; CTX.lineWidth=4;
+      for(let j=0;j<2;j++){
+        CTX.beginPath();
+        CTX.ellipse(f.x,f.y,f.r*(0.3+k*0.7)+j*18, f.r*(0.16+k*0.38)+j*9, 0, 0, 6.28);
+        CTX.stroke();
+      }
+    } else if(f.kind==="slash"){
+      CTX.strokeStyle="rgba(129,140,248,"+(a*0.9)+")"; CTX.lineWidth=5;
+      for(let j=0;j<2;j++){
+        const s=(j?1:-1);
+        CTX.beginPath();
+        CTX.moveTo(f.x-s*f.r*0.5, f.y-f.r*0.5);
+        CTX.quadraticCurveTo(f.x, f.y+f.r*0.15, f.x+s*f.r*0.5, f.y+f.r*0.5);
+        CTX.stroke();
+      }
+    } else if(f.kind==="wave"){
+      CTX.strokeStyle="rgba(99,102,241,"+(a*0.85)+")"; CTX.lineWidth=6;
+      CTX.beginPath(); CTX.arc(f.x,f.y,f.r*(0.25+k*0.75), -0.6, 0.6); CTX.stroke();
+      CTX.strokeStyle="rgba(165,180,252,"+(a*0.6)+")"; CTX.lineWidth=3;
+      CTX.beginPath(); CTX.arc(f.x,f.y,f.r*(0.15+k*0.6), -0.9, 0.9); CTX.stroke();
+    } else if(f.kind==="sparkle"){
+      for(let j=0;j<6;j++){
+        const ang=j/6*6.28+k*1.5, rr=f.r*(0.2+k*0.7);
+        CTX.fillStyle="rgba(244,114,182,"+(a*0.9)+")";
+        CTX.beginPath();
+        const sx=f.x+Math.cos(ang)*rr, sy=f.y+Math.sin(ang)*rr, sz=3+k*4;
+        CTX.moveTo(sx,sy-sz); CTX.lineTo(sx+sz*0.5,sy); CTX.lineTo(sx,sy+sz); CTX.lineTo(sx-sz*0.5,sy);
+        CTX.closePath(); CTX.fill();
+      }
+    } else if(f.kind==="void"){
+      CTX.strokeStyle="rgba(167,139,250,"+(a*0.9)+")"; CTX.lineWidth=3;
+      for(let j=0;j<3;j++){
+        CTX.beginPath();
+        for(let q=0;q<=26;q++){
+          const ang=q/26*6.28*1.3 + k*3 + j*2.09, rr=f.r*(0.15+k*0.6)*(q/26);
+          if(q===0) CTX.moveTo(f.x+Math.cos(ang)*rr, f.y+Math.sin(ang)*rr);
+          else CTX.lineTo(f.x+Math.cos(ang)*rr, f.y+Math.sin(ang)*rr);
+        }
+        CTX.stroke();
+      }
+    } else if(f.kind==="leaf"){
+      for(let j=0;j<5;j++){
+        const ang=j/5*6.28+k*1.8, rr=f.r*(0.25+k*0.6);
+        CTX.fillStyle="rgba(74,222,128,"+(a*0.85)+")";
+        CTX.save(); CTX.translate(f.x+Math.cos(ang)*rr, f.y+Math.sin(ang)*rr); CTX.rotate(ang);
+        CTX.beginPath(); CTX.ellipse(0,0,9,4,0,0,6.28); CTX.fill(); CTX.restore();
+      }
+    } else {                                                   // ring / beam / 默认
+      CTX.strokeStyle=f.color; CTX.globalAlpha=a*0.9; CTX.lineWidth=k<0.35?4:2;
+      CTX.beginPath(); CTX.arc(f.x,f.y,f.r*(0.25+k*0.8),0,6.28); CTX.stroke();
+      CTX.globalAlpha=1;
+    }
+    CTX.restore();
   }
 }
 function drawEnemies(){
@@ -5522,7 +5699,7 @@ function confirmStart(){
   S.mode="playing"; S.timeScale=1;
   S.t=0; S.kills=0; S.stage=1; S.stageTimer=CONFIG.level.duration; S.bossActive=false; S.bgStart=Math.floor(Math.random()*20);
   S.runCoins=0; S.playerSlowT=0; S.playerBurn=null; S.lastMult=1;
-  S.skills={}; S.tierIds={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[]; S.bossAoEs=[]; S.shieldSurgeT=0;
+  S.skills={}; S.tierIds={}; S.skillCd={}; S.buff={ oc:0, rage:0 }; S.holes=[]; S.bossAoEs=[]; S.shieldSurgeT=0; S.fx=[];
   const pAttr=PK(S.activeRole).attr;                       // 属性专属技能（切换角色重新选择 · 等级继承）
   for(const id of (S.attrPick[pAttr]||[])) S.skills[id]=S.skills[id]||1;
   ensureTierSkills(S.activeRole);
@@ -5655,7 +5832,7 @@ function loop(ts){
   // 渲染（levelup/pause 时场景静止，背景仍刷新）
   drawBackground(S.player?S.player.x:0,S.player?S.player.y:0);
   if(S.player){
-    drawPuddles(); drawBossAoEs(); drawPickups(); drawHoles(); drawEbullets(); drawEnemies(); drawBullets(); drawDrones(); drawPlayer(); drawPartners(); drawParticles();
+    drawPuddles(); drawBossAoEs(); drawPickups(); drawHoles(); drawEbullets(); drawEnemies(); drawFx(); drawBullets(); drawDrones(); drawPlayer(); drawPartners(); drawParticles();
   }
   if(S.mode==="playing"){
     refreshTopUI();

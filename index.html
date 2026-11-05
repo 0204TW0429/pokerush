@@ -1779,7 +1779,7 @@ function castZMove(){
   const nm=zMoveName();
   showBanner("Z 招式 · "+nm);
   sndExplode(true);
-  castBlast(lvl, 560, 2.6, ATTR_TEXT[attr].color, {shape:"ring"});
+  castBlast(lvl, 560, 2.6, (ATTR_TEXT[attr]||{}).color||"#fde047", {shape:"ring"});
   burst(S.player.x,S.player.y,"#fff",30,320);
   for(const e of S.enemies){ if(e.dead) continue;
     if(attr==="fire") e.burn={t:4,dps:8};

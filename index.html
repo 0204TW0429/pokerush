@@ -24,7 +24,11 @@
   #hud .bar > i { position:absolute; inset:0; border-radius:7px; transform-origin:left; transition:transform .12s ease; }
   #hp-bar > i { background:linear-gradient(90deg,#f87171,#fb7185); }
   #shield-bar > i { background:linear-gradient(90deg,#38bdf8,#22d3ee); }
-  #hud .bar-label { font-size:11px; color:#94a3b8; letter-spacing:2px; margin-bottom:2px; display:flex; justify-content:space-between; }
+  #armor-bar > i { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+  #hud .top-left .bar-wrap:nth-child(1) .bar-label span:first-child { color:#fca5a5; }
+  #hud .top-left .bar-wrap:nth-child(2) .bar-label span:first-child { color:#7dd3fc; }
+  #hud .top-left .bar-wrap:nth-child(3) .bar-label span:first-child { color:#fcd34d; }
+  #hud .bar-label { font-size:12px; color:#94a3b8; letter-spacing:1px; margin-bottom:3px; display:flex; justify-content:space-between; align-items:center; }
   #hud .top-right { position:absolute; right:14px; top:12px; text-align:right; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
   #hud .stat { font-size:13px; color:#cbd5e1; line-height:1.3; }
   #hud .stat b { font-size:17px; color:#fff; font-weight:700; }
@@ -86,16 +90,16 @@
   #menu .intro, #menu .controls, #menu .menu-coins { text-shadow:1px 1px 0 rgba(2,6,23,.35); color:#1e293b; }
   #menu .intro span { color:#15803d; }
   #menu .menu-coins b { color:#b45309; }
-  #collection .col-title, #shop .col-title { color:#ffd54f; -webkit-text-stroke:1.5px #1565c0; text-shadow:3px 3px 0 #0d47a1; }
+  #shop .col-title { font-size:26px; font-weight:800; letter-spacing:5px; color:#fbbf24; -webkit-text-stroke:0; text-shadow:0 2px 6px rgba(0,0,0,.5); margin:2px 0 2px; }
   #collection .col-sub, #shop .col-sub { color:#1e293b; text-shadow:1px 1px 0 rgba(255,255,255,.5); }
   #shop-grid, #shop-tabs, #shop-page { position:relative; z-index:1; }
   #shop-tabs { display:flex; flex-wrap:nowrap; justify-content:center; gap:8px; margin:12px 0; width:min(720px,94vw); }
   #shop-tabs .shop-big { min-width:0; flex:1 1 0; }
   @media (max-width:520px){ #shop-tabs .shop-big b { font-size:16px; } #shop-tabs .shop-big span { font-size:12px; letter-spacing:1px; } }
   #shop { justify-content:flex-start; overflow-y:auto; padding:18px 20px 26px; }
-  #shop .shop-top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 0 2px;
-    position:sticky; top:0; z-index:6; background:rgba(3,6,15,.94); border-radius:12px; padding:8px 6px; box-shadow:0 4px 12px rgba(0,0,0,.4); }
-  .shop-top .btn { width:auto; padding:8px 18px; }
+  #shop .shop-top { display:flex; align-items:center; justify-content:center; gap:10px; width:fit-content; margin:4px auto 4px;
+    position:sticky; top:6px; z-index:6; background:transparent; border-radius:0; padding:0; box-shadow:none; }
+  .shop-top .btn { width:auto; min-width:96px; min-height:36px; padding:6px 20px; font-size:14px; }
   #menu .sub { font-size:15px; color:#94a3b8; margin-top:10px; letter-spacing:3px; }
   #menu .intro { margin-top:26px; max-width:340px; font-size:14px; color:#cbd5e1; line-height:1.9; text-align:center; }
   #menu .intro span { color:#67e8f9; }
@@ -163,7 +167,7 @@
   .ca-ball.shake { animation:caShake .5s linear 3; }
   @keyframes caFly { to { transform:translate(-48px,-58px); } }
   @keyframes caShake { 0%,100%{transform:translate(-48px,-58px) rotate(0)} 25%{transform:translate(-52px,-54px) rotate(-20deg)} 75%{transform:translate(-44px,-62px) rotate(20deg)} }
-  #shop-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px;  /* 5 列 4 行 */ }
+  #shop-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; width:min(720px,94vw); margin:0 auto; }  /* 5 列 4 行 · 居中 */
   @media (max-width:720px){ #shop-grid { grid-template-columns:repeat(2,1fr); } }
   #shop-page { display:flex; gap:8px; justify-content:center; margin:10px 0; }
   #opening { background:#05060a !important; }
@@ -183,6 +187,7 @@
   .shop-big b { font-size:20px; color:#fbbf24; }
   .shop-big:hover { transform:translateY(-2px); }
   .shop-big.on { border-color:#fbbf24; color:#04121a; background:linear-gradient(120deg,#fbbf24,#f59e0b); }
+  .shop-big b { letter-spacing:2px; }
   .shop-big.on b { color:#04121a; }
   .attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:8px; max-height:52vh; overflow-y:auto; padding:6px; margin:12px 0; }
   .attr-it { display:flex; align-items:center; gap:6px; font-size:13px; color:#e2e8f0; background:rgba(15,23,42,.65); border:1px solid rgba(148,163,184,.25); border-radius:8px; padding:7px 9px; cursor:pointer; }
@@ -211,6 +216,13 @@
     text-align:center; cursor:pointer; pointer-events:auto; transition:transform .1s ease, border-color .15s;
   }
   .col-card:hover { transform:translateY(-3px); }
+  .ball-ico { width:42px; height:42px; border-radius:50%; margin:0 auto 6px; position:relative;
+    background:linear-gradient(180deg,#ef4444 0 47%,#0f172a 47% 53%,#f8fafc 53% 100%);
+    border:2px solid #0f172a; box-shadow:0 0 10px rgba(239,68,68,.25); }
+  .ball-ico.sm { width:24px; height:24px; margin:0 auto; }
+  .ball-ico.sm::after { width:8px; height:8px; margin:-4px 0 0 -4px; border-width:2px; }
+  .ball-ico::after { content:""; position:absolute; left:50%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px;
+    border-radius:50%; background:#f8fafc; border:2px solid #0f172a; }
   .col-card .col-dot { width:42px; height:42px; border-radius:50%; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#0f172a; }
   .col-card .col-name { font-size:14px; font-weight:700; color:#f8fafc; letter-spacing:1px; }
   .col-card .col-attr { font-size:10px; color:#94a3b8; margin-top:3px; letter-spacing:1px; }
@@ -222,7 +234,7 @@
   .col-card .btn-evolve:disabled { background:rgba(148,163,184,.2); color:#64748b; cursor:not-allowed; }
   .col-card .btn-pick { background:linear-gradient(120deg,#22d3ee,#67e8f9); color:#04121a; }
   .col-card .btn-pick.used { background:rgba(148,163,184,.18); color:#94a3b8; }
-  .col-card.locked { opacity:.55; }
+  .col-card.locked { opacity:1; }
   .col-card.locked .col-dot { background:rgba(148,163,184,.15) !important; color:#64748b; }
   .col-card.shiny { border-color:#facc15; box-shadow:0 0 10px rgba(250,204,21,.35); }
   .col-card .col-tag { position:absolute; top:5px; right:8px; color:#fde047; font-size:11px; font-weight:900; }
@@ -359,14 +371,14 @@
   <div id="hud" hidden>
     <div class="top-left">
       <div class="bar-wrap">
-        <div class="bar-label"><span>装甲</span><span id="hp-num">100</span></div>
+        <div class="bar-label"><span>血量</span><span id="hp-num">100</span></div>
         <div class="bar" id="hp-bar"><i style="transform:scaleX(1)"></i></div>
       </div>
-      <div class="bar-wrap" id="shield-row" hidden>
+      <div class="bar-wrap" id="shield-row">
         <div class="bar-label"><span>护盾</span><span id="shield-num">0</span></div>
         <div class="bar" id="shield-bar"><i style="transform:scaleX(0)"></i></div>
       </div>
-      <div class="bar-wrap" id="armor-row" hidden>
+      <div class="bar-wrap" id="armor-row">
         <div class="bar-label"><span>装甲</span><span id="armor-num">0</span></div>
         <div class="bar" id="armor-bar"><i style="transform:scaleX(0)"></i></div>
       </div>
@@ -503,7 +515,7 @@
   <div class="overlay" id="shop" hidden>
     <div class="pk-bg" aria-hidden="true"></div>
     <div class="col-title">商店</div>
-    <div class="col-sub">金币 <b id="shop-coins">0</b> · Z 招式 / Mega 石 / 极巨化（均按宝可梦原著设定）</div>
+    <div class="col-sub">金币 <b id="shop-coins">0</b> · Z 招式 / Mega 石 / 极巨化</div>
     <div class="shop-top"><button class="btn" id="btn-shop-back">返回</button></div>
     <div class="shop-tabs" id="shop-tabs"></div>
     <div id="shop-grid"></div>
@@ -1811,11 +1823,11 @@ const S = {
   spawnTimer:0, eliteTimer:0, dmgFlash:0,
   kills:0, stage:1, stageTimer:CONFIG.level.duration, bossActive:false,
   level:1, exp:0, expNeed:CONFIG.exp.base,
-  roster:{ pichu:2 },           // 已捕捉角色及进化阶段（初始伙伴：皮卡丘）
+  roster:{ pikachu:1 },         // 已捕捉角色及进化阶段（初始伙伴：皮卡丘）
   shiny:{},                     // 闪光宝可梦（1/8192 稀有）
   party:[], partySlots:1,       // 出战队伍（最多 3 格，格 2/3 需金币永久解锁）
   partners:[],                  // 战斗中队伍伙伴（独立血量）
-  coins:0, runCoins:0, activeRole:"pichu",  // 金币 / 本局金币 / 当前出战角色
+  coins:0, runCoins:0, activeRole:"pikachu",  // 金币 / 本局金币 / 当前出战角色
   bossId:null, playerSlowT:0, playerBurn:null, lastMult:1,
   skills:{}, skillCd:{},      // 技能等级 / 技能冷却
   buff:{ oc:0, rage:0 }, holes:[],   // 超频/狂暴 计时 · 黑洞
@@ -1884,7 +1896,13 @@ function loadProgress(){
   }
   d = d||{};
   if(d.roster && typeof d.roster==="object") S.roster=d.roster;
-  if(!S.roster.pichu) S.roster.pichu = 2;                       // 初始伙伴：皮卡丘
+  // 初始伙伴：皮卡丘（旧存档皮丘进度迁移，避免形象/头像错成皮丘）
+  const pu=(S.roster.pichu||0);
+  if(pu>=2 && !S.roster.pikachu) S.roster.pikachu = 1;
+  if(pu>=3 && !S.roster.raichu) S.roster.raichu = 1;
+  if(pu>=2) delete S.roster.pichu;
+  if(!S.roster.pikachu) S.roster.pikachu = 1;
+  if(S.activeRole==="pichu") S.activeRole="pikachu";
   S.coins = d.coins||0;
   if(d.shiny && typeof d.shiny==="object") S.shiny=d.shiny;
   S.partySlots = d.slots?Math.max(1,Math.min(3,+d.slots)):1;   // 不用 clamp（其定义在 loadProgress 之后，避免 TDZ）
@@ -1902,6 +1920,7 @@ function loadProgress(){
   if(S.avatar==="pichu") S.avatar="pikachu";   // 皮卡丘头像修复：误存为皮丘时统一回退皮卡丘
   if(d.achieves && typeof d.achieves==="object") S.achieves=d.achieves;
   if(d.formPick && typeof d.formPick==="object") S.formPick=d.formPick;
+  if(S.formPick && S.formPick.pichu){ delete S.formPick.pichu; }   // 皮丘表单已废弃，统一用皮卡丘
   if(d.bgm) S.bgm=d.bgm;
   if(d.ball) S.ball=d.ball;
   if(d.kills) S.stats.kills = +d.kills||0;
@@ -2072,8 +2091,7 @@ function captureBoss(){                                // Boss 捕捉：捕捉/�
   S.catchLeft = 3;
   const pkm=PK(S.catchTarget);
   const tier=roleTier(S.catchTarget);
-  const g=$("catch-av").getContext("2d");
-  drawQ(S.catchTarget,60,64,44,0,3,g);
+  drawCatchBig(S.catchTarget,$("catch-av"),120,120,2);
   $("catch-name").textContent = pkm.name+"（"+((ATTR_TEXT[attr]||ATTR_TEXT.normal).attr)+" 系）";
   $("catch-avhint").textContent = S.roster[S.catchTarget] ? "已拥有该精灵 · 捕捉成功将自动出售 +20 金币" :
     (tier===3?"一级神 · 自带 1 红 1 金品质技能":tier===2?"二级神 · 自带 1 金 1 蓝品质技能":tier===1?"幻兽 · 自带 1 金品质技能":"普通精灵 · 自带 1 蓝品质技能");
@@ -2083,8 +2101,7 @@ function captureBoss(){                                // Boss 捕捉：捕捉/�
 function tryCatch(){                                        // 点击捕捉：播放经典精灵球动画
   if(S.catchLeft<=0) return;
   hide("catch"); show("catch-anim"); S.mode="catch-anim"; S.timeScale=0;
-  const g=$("ca-pkm").getContext("2d");
-  drawQ(S.catchTarget,60,62,42,0,3,g);
+  drawCatchBig(S.catchTarget,$("ca-pkm"),120,120,2);
   $("ca-pkm").classList.remove("in");
   const ball=$("ca-ball"); ball.classList.remove("fly","shake");
   void ball.offsetWidth; ball.classList.add("fly");
@@ -2143,7 +2160,7 @@ function finishStage(){
   S.best = Math.max(S.best||0, S.stage-1);
   checkAchieves();
   const p = S.player;
-  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 3 层（上限 150）· 装甲每关 +1（最多 3 层）
+  p.hp = p.maxHp; p.shieldLvl = 3; p.armor = Math.min(3, p.armor+1);      // 护盾补满 3 层 · 装甲每关 +1（最多 3 层）
   refreshHpUI(); syncShieldUI(); syncArmorUI();
   S.dyna = false; S.dynaT = 0; S.dynaCharges = 1;               // 每关 1 次极巨化
   updatePowerUI();
@@ -3428,8 +3445,8 @@ function tickSkills(dt){
     if(lvl<=0) continue;
     if(id==="sacred"){ if(p.hp<p.maxHp){ p.hp=Math.min(p.maxHp,p.hp+2*dt); refreshHpUI(); } }
     if(id==="overclock" && cd.overclock<=0){ cd.overclock=Math.max(2,11-lvl); S.buff.oc=3; }
-    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<150){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
-    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<150){ p.shieldLvl++; syncShieldUI(); } }
+    if(id==="nova_shield" && cd.nova_shield<=0){ cd.nova_shield=Math.max(6,22-lvl*4); if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); burst(p.x,p.y,"#38bdf8",12,160); } }
+    if(id==="bastion" && cd.bastion<=0){ cd.bastion=15; if(p.shieldLvl<3){ p.shieldLvl++; syncShieldUI(); } }
     if(id==="bulwark" && cd.bulwark<=0){ cd.bulwark=Math.max(6,14-lvl*3); if(p.armor<3){ p.armor++; syncArmorUI(); burst(p.x,p.y,"#fbbf24",12,160); } }
     if(id==="shield_surge" && cd.shield_surge<=0){ cd.shield_surge=Math.max(8,18-lvl*4); S.shieldSurgeT=2.5; }
     const fn=SKILL_FN[id];
@@ -3475,7 +3492,7 @@ function renderChoices(){
 function refreshHpUI(){
   const p=S.player;
   $("hp-bar").firstElementChild.style.transform="scaleX("+clamp(p.hp/p.maxHp,0,1)+")";
-  $("hp-num").textContent=Math.ceil(p.hp);
+  $("hp-num").textContent=Math.ceil(p.hp)+" / "+Math.round(p.maxHp);
   const box=$("hp-partners");
   if(box){
     box.innerHTML = S.partners.map(q=>{
@@ -3487,16 +3504,16 @@ function refreshHpUI(){
 }
 function syncShieldUI(){
   const p=S.player;
-  $("shield-row").hidden = p.shieldLvl<=0;
-  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/150,0,1)+")";
-  $("shield-num").textContent=p.shieldLvl;
+  $("shield-row").hidden = false;
+  $("shield-bar").firstElementChild.style.transform="scaleX("+clamp(p.shieldLvl/3,0,1)+")";
+  $("shield-num").textContent=(p.shieldLvl||0)+" 层";
 }
 function syncArmorUI(){
   const p=S.player;
   const ar=$("armor-row"); if(!ar) return;
-  ar.hidden = (p.armor||0)<=0;
+  ar.hidden = false;
   $("armor-bar").firstElementChild.style.transform="scaleX("+clamp((p.armor||0)/3,0,1)+")";
-  $("armor-num").textContent=p.armor||0;
+  $("armor-num").textContent=(p.armor||0)+" / 3";
 }
 function refreshExpUI(){
   $("exp-bar").firstElementChild.style.transform="scaleX("+clamp(S.exp/S.expNeed,0,1)+")";
@@ -3915,7 +3932,7 @@ function drawCharizard(x,y,r,rot){ // 精英敌人 → 喷火龙
 }
 function drawPlayer(){
   const p=S.player;
-  const id = S.activeRole || "pichu";
+  const id = S.activeRole || "pikachu";
   const form = roleForm(id);
   const rr = p.r*1.05 * (roleMega(id)?1.28:1) * (S.dyna?1.9:1);
   if(p.flash>0 && Math.floor(p.flash*20)%2===0){ /* 受击闪烁帧 */ }
@@ -4641,6 +4658,25 @@ function drawStatic(id,cv,W,H,cx,cy,rr,form,keep,onLoad){   // 静态 canvas：�
     drawQ(id,cx,cy,rr,0,form,c2);
   });
 }
+function drawCatchBig(id,cv,W,H,scale){   // 捕捉界面：真实立绘整数倍放大，像素清晰不裁切
+  const c=cv.getContext("2d");
+  const sh=!!(S&&S.shiny&&S.shiny[id]);
+  const paint=function(){
+    if(!cv.isConnected) return;
+    c.clearRect(0,0,W,H);
+    if(sprReady(id,sh)){
+      const im=SPR_IMG[id+(sh?"|s":"")];
+      const sz=40*scale;
+      c.imageSmoothingEnabled=false;
+      c.drawImage(im,Math.round((W-sz)/2),Math.round((H-sz)/2),sz,sz);
+      if(sh) drawShinyFx(c,W/2,H/2,sz*0.55);
+    } else {
+      drawQ(id,W/2,H/2,Math.min(W,H)*0.33,0,1,c);
+    }
+  };
+  paint();
+  if(!sprReady(id,sh)) getSprite(id,sh,function(){ paint(); });
+}
 const Q_CACHE={};
 function qHash(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h; }
 function drawShinyFx(C,x,y,r){   // 闪光：金色星芒 + 粒子光环
@@ -5070,7 +5106,7 @@ function renderPartyBar(){
   for(let i=0;i<3;i++){
     const slot=document.createElement("div"); slot.className="pslot";
     if(i===0){
-      const id=S.activeRole||"pichu"; const f=roleForm(id);
+      const id=S.activeRole||"pikachu"; const f=roleForm(id);
       slot.innerHTML='<div class="pn">'+roleName(id)+'</div><div class="pk">主角色 · 形态 '+f+'/'+roleMaxForm(id)+(S.shiny[id]?" · ★闪光":"")+'</div>';
     } else if(S.partySlots>i){
       const id=S.party[i];
@@ -5239,9 +5275,9 @@ const SHOP_PER=20;   // 5 列 × 4 行 = 20 格
 function renderShop(){
   const sc=$("shop-coins"); if(sc) sc.textContent=S.coins;
   const tabs=$("shop-tabs"); tabs.innerHTML="";
-  for(const [k,lbl,ico] of [["balls","精灵球","●"],["z","Z 招式","Z"],["mega","Mega 石","M"],["dyna","极巨化","极"]]){
+  for(const [k,lbl,ico] of [["balls","精灵球","ball"],["z","Z 招式",""],["mega","Mega 石",""],["dyna","极巨化",""]]){
     const tb=document.createElement("button"); tb.className="shop-big"+(shopTab===k?" on":"");
-    tb.innerHTML='<b>'+ico+'</b><span>'+lbl+'</span>';
+    tb.innerHTML=(ico==="ball"?'<i class="ball-ico sm"></i>':'')+'<b>'+lbl+'</b>';
     tb.addEventListener("click",()=>{ shopTab=k; shopPage=0; renderShop(); });
     tabs.appendChild(tb);
   }
@@ -5258,27 +5294,27 @@ function renderShop(){
     let dot="",name="",attrLine="",skillLine="",cost=0,owned=false,kind="";
     if(it.t==="ball"){
       const B=it.b; owned=S.ball===B.id;
-      dot='<div class="col-dot" style="background:#fbbf24">球</div>';
-      name=B.name; attrLine="攻击伤害 ×"+B.mult;
-      skillLine=B.desc; cost=B.cost; kind="ball";
+      dot='<div class="ball-ico"></div>';
+      name=B.name; attrLine="伤害 ×"+B.mult;
+      skillLine=B.desc.replace(/精灵球伤害 ?×[\d.]+ ?· ?/,""); cost=B.cost; kind="ball";
     }
     else if(it.t==="z"){
       const T=ATTR_TEXT[it.attr]; owned=!!S.zOwned[it.attr];
       dot='<div class="col-dot" style="background:'+T.color+'">Z</div>';
       name=Z_MOVE_BY_ATTR[it.attr]; attrLine=T.attr+'属性 Z 招式手环';
-      skillLine='战斗中满能量按 Z 施放（原著 Z 招式）'; cost=Z_COST; kind="z";
+      skillLine='满能量时按 Z 键施放'; cost=Z_COST; kind="z";
     }
     else if(it.t==="mega"){
       const R=PK(it.id), T=ATTR_TEXT[R.attr]; owned=!!S.mega[it.id];
       dot='<div class="col-dot" style="background:'+T.color+'">M</div>';
       name=R.name+' · Mega'; attrLine='G'+R.gen+' · '+T.attr+'属性';
-      skillLine='出战该精灵大幅强化（原著 Mega 进化）'; cost=MEGA_COST; kind="mega";
+      skillLine='出战该精灵大幅强化'; cost=MEGA_COST; kind="mega";
     }
     else {
       owned=!!S.dynaUnlocked;
       dot='<div class="col-dot" style="background:#a78bfa">极</div>';
       name="极巨化手环"; attrLine="全精灵通用";
-      skillLine='战斗中按 G 极巨化（原著 Dynamax）'; cost=DYNA_COST; kind="dyna";
+      skillLine='战斗中按 G 键极巨化'; cost=DYNA_COST; kind="dyna";
     }
     const card=document.createElement("div"); card.className="col-card"+(owned?"":" locked");
     card.innerHTML=dot+'<div class="col-name">'+name+'</div><div class="col-attr">'+attrLine+'</div><div class="col-skill">'+skillLine+'</div>';
@@ -5503,7 +5539,7 @@ function confirmStart(){
   syncDrones();
   hide("menu"); hide("gameover"); hide("levelup"); hide("pause"); hide("banner"); hide("collection");
   show("hud"); show("topbtns");
-  refreshHpUI(); syncShieldUI(); refreshExpUI(); refreshLevelUI(); refreshTopUI();
+  refreshHpUI(); syncShieldUI(); syncArmorUI(); refreshExpUI(); refreshLevelUI(); refreshTopUI();
   updatePowerUI();
   if(isTouchDevice()) $("joy-area").classList.add("on");
 }

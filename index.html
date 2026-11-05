@@ -2001,7 +2001,7 @@ function buildStars(){
 function newPlayer(){
   return { x:W/2, y:H/2, r:CONFIG.player.radius, hp:CONFIG.player.hp, maxHp:CONFIG.player.hp,
     angle:-Math.PI/2, inv:0, flash:0, droneLvl:0, multiLvl:0, fireLvl:0, dmgLvl:0, pierceLvl:0,
-    shieldLvl:0, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1, armor:1 };
+    shieldLvl:150, speedLvl:0, magnetLvl:0, healUsed:0, droneCount:1, armor:1 };
 }
 function syncDrones(){
   const n = S.player.droneCount;
